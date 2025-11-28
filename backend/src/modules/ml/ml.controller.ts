@@ -52,9 +52,10 @@ export class MlController {
   @ApiResponse({ status: 200, description: 'Clients avec probabilité churn élevée' })
   async getClientChurnRisk(
     @Query('seuil') seuil: number,
-    @Query() pagination: PaginationDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ) {
-    return this.mlService.getClientChurnRisk(seuil || 0.3, pagination);
+    return this.mlService.getClientChurnRisk(seuil || 0.3, { page, limit });
   }
 
   @Get('clients/fort-potentiel')
@@ -65,9 +66,10 @@ export class MlController {
   @ApiResponse({ status: 200, description: 'Clients avec fort potentiel' })
   async getClientsFortPotentiel(
     @Query('seuil') seuil: number,
-    @Query() pagination: PaginationDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ) {
-    return this.mlService.getClientsFortPotentiel(seuil || 70, pagination);
+    return this.mlService.getClientsFortPotentiel(seuil || 70, { page, limit });
   }
 
   @Get('clients/:id/features')
@@ -97,9 +99,10 @@ export class MlController {
   @ApiResponse({ status: 200, description: 'Affaires à risque' })
   async getAffairesRisqueDepassement(
     @Query('seuil') seuil: number,
-    @Query() pagination: PaginationDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ) {
-    return this.mlService.getAffairesRisqueDepassement(seuil || 50, pagination);
+    return this.mlService.getAffairesRisqueDepassement(seuil || 50, { page, limit });
   }
 
   @Get('affaires/:id/features')

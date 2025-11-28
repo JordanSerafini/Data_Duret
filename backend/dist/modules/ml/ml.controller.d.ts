@@ -26,7 +26,7 @@ export declare class MlController {
             totalPages: number;
         };
     }>;
-    getClientChurnRisk(seuil: number, pagination: PaginationDto): Promise<{
+    getClientChurnRisk(seuil: number, page?: number, limit?: number): Promise<{
         data: any[];
         meta: {
             total: number;
@@ -35,7 +35,7 @@ export declare class MlController {
             totalPages: number;
         };
     }>;
-    getClientsFortPotentiel(seuil: number, pagination: PaginationDto): Promise<{
+    getClientsFortPotentiel(seuil: number, page?: number, limit?: number): Promise<{
         data: any[];
         meta: {
             total: number;
@@ -57,7 +57,7 @@ export declare class MlController {
             totalPages: number;
         };
     }>;
-    getAffairesRisqueDepassement(seuil: number, pagination: PaginationDto): Promise<{
+    getAffairesRisqueDepassement(seuil: number, page?: number, limit?: number): Promise<{
         data: any[];
         meta: {
             total: number;

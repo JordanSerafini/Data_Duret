@@ -33,11 +33,11 @@ let MlController = class MlController {
     async getClientsParSegment(segment, pagination) {
         return this.mlService.getClientsParSegment(segment.toUpperCase(), pagination);
     }
-    async getClientChurnRisk(seuil, pagination) {
-        return this.mlService.getClientChurnRisk(seuil || 0.3, pagination);
+    async getClientChurnRisk(seuil, page, limit) {
+        return this.mlService.getClientChurnRisk(seuil || 0.3, { page, limit });
     }
-    async getClientsFortPotentiel(seuil, pagination) {
-        return this.mlService.getClientsFortPotentiel(seuil || 70, pagination);
+    async getClientsFortPotentiel(seuil, page, limit) {
+        return this.mlService.getClientsFortPotentiel(seuil || 70, { page, limit });
     }
     async getClientFeatures(id) {
         return this.mlService.getClientFeatures(id);
@@ -45,8 +45,8 @@ let MlController = class MlController {
     async getAffairePredictions(pagination) {
         return this.mlService.getAffairePredictions(pagination);
     }
-    async getAffairesRisqueDepassement(seuil, pagination) {
-        return this.mlService.getAffairesRisqueDepassement(seuil || 50, pagination);
+    async getAffairesRisqueDepassement(seuil, page, limit) {
+        return this.mlService.getAffairesRisqueDepassement(seuil || 50, { page, limit });
     }
     async getAffaireFeatures(id) {
         return this.mlService.getAffaireFeatures(id);
@@ -99,9 +99,10 @@ __decorate([
     (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Clients avec probabilité churn élevée' }),
     __param(0, (0, common_1.Query)('seuil')),
-    __param(1, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, dto_1.PaginationDto]),
+    __metadata("design:paramtypes", [Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], MlController.prototype, "getClientChurnRisk", null);
 __decorate([
@@ -112,9 +113,10 @@ __decorate([
     (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Clients avec fort potentiel' }),
     __param(0, (0, common_1.Query)('seuil')),
-    __param(1, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, dto_1.PaginationDto]),
+    __metadata("design:paramtypes", [Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], MlController.prototype, "getClientsFortPotentiel", null);
 __decorate([
@@ -146,9 +148,10 @@ __decorate([
     (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Affaires à risque' }),
     __param(0, (0, common_1.Query)('seuil')),
-    __param(1, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, dto_1.PaginationDto]),
+    __metadata("design:paramtypes", [Number, Number, Number]),
     __metadata("design:returntype", Promise)
 ], MlController.prototype, "getAffairesRisqueDepassement", null);
 __decorate([
