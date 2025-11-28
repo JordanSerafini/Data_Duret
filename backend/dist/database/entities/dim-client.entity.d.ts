@@ -1,0 +1,31 @@
+export declare class DimClient {
+    clientSk: number;
+    clientNk: string;
+    sourceSystem: string;
+    sourceId: number;
+    societeSk: number;
+    code: string;
+    raisonSociale: string;
+    typeClient: string;
+    siret: string;
+    tvaIntracom: string;
+    adresse: string;
+    codePostal: string;
+    ville: string;
+    departement: string;
+    region: string;
+    pays: string;
+    telephone: string;
+    email: string;
+    modeReglement: string;
+    conditionsPaiement: number;
+    encoursMax: number;
+    tauxRemise: number;
+    segmentClient: string;
+    scoreRisque: number;
+    sageCode: string;
+    mdeCode: string;
+    isCurrent: boolean;
+    validFrom: Date;
+    validTo: Date;
+}

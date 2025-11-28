@@ -1,0 +1,34 @@
+export declare class DimAffaire {
+    affaireSk: number;
+    affaireNk: string;
+    sourceSystem: string;
+    sourceId: number;
+    societeSk: number;
+    clientSk: number;
+    commercialSk: number;
+    responsableSk: number;
+    code: string;
+    libelle: string;
+    etat: string;
+    etatGroupe: string;
+    typeAffaire: string;
+    dateCreation: Date;
+    dateDebutPrevue: Date;
+    dateFinPrevue: Date;
+    dateDebutReelle: Date;
+    dateFinReelle: Date;
+    dureePrevueJours: number;
+    dureeReelleJours: number;
+    adresseChantier: string;
+    codePostalChantier: string;
+    villeChantier: string;
+    departementChantier: string;
+    regionChantier: string;
+    montantDevis: number;
+    montantCommande: number;
+    budgetHeures: number;
+    margePrevuePct: number;
+    isCurrent: boolean;
+    validFrom: Date;
+    validTo: Date;
+}

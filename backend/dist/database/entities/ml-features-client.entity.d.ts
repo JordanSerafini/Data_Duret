@@ -1,0 +1,30 @@
+export declare class MlFeaturesClient {
+    id: number;
+    clientSk: number;
+    dateExtraction: Date;
+    ca12m: number;
+    ca6m: number;
+    ca3m: number;
+    ca1m: number;
+    tendanceCa: string;
+    volatiliteCa: number;
+    nbCommandes12m: number;
+    frequenceCommandeJours: number;
+    recenceDerniereCommandeJours: number;
+    panierMoyen: number;
+    panierMax: number;
+    panierMin: number;
+    delaiPaiementMoyenJours: number;
+    nbRetardsPaiement12m: number;
+    tauxImpayes: number;
+    ancienneteMois: number;
+    nbAffairesTotal: number;
+    typeAffairesPrincipal: string;
+    scoreRfm: number;
+    scoreRisque: number;
+    scorePotentiel: number;
+    segmentValeur: string;
+    segmentComportement: string;
+    segmentRisque: string;
+    probabiliteChurn: number;
+}

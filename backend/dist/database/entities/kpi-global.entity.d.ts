@@ -1,0 +1,32 @@
+export declare class KpiGlobal {
+    id: number;
+    societeSk: number;
+    annee: number;
+    mois: number;
+    kpiCaMensuel: number;
+    kpiCaCumul: number;
+    kpiCaObjectif: number;
+    kpiCaRealisationPct: number;
+    kpiCaVariationN1Pct: number;
+    kpiPanierMoyen: number;
+    kpiNbNouveauxClients: number;
+    kpiTauxTransformation: number;
+    kpiMargeBrute: number;
+    kpiTauxMarge: number;
+    kpiMargeObjectif: number;
+    kpiTresorerieNette: number;
+    kpiBfr: number;
+    kpiDsoJours: number;
+    kpiDpoJours: number;
+    kpiEffectifMoyen: number;
+    kpiHeuresProductives: number;
+    kpiTauxOccupation: number;
+    kpiCoutMoParHeure: number;
+    kpiCaParSalarie: number;
+    kpiNbAffairesEnCours: number;
+    kpiNbAffairesEnRetard: number;
+    kpiNbAffairesEnDepassement: number;
+    kpiCarnetCommandes: number;
+    kpiResteAFacturer: number;
+    calculDate: Date;
+}

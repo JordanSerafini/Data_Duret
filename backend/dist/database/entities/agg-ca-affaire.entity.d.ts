@@ -1,0 +1,34 @@
+export declare class AggCaAffaire {
+    id: number;
+    affaireSk: number;
+    societeSk: number;
+    clientSk: number;
+    montantDevis: number;
+    montantCommande: number;
+    montantFacture: number;
+    montantAvoir: number;
+    montantResteAFacturer: number;
+    coutMoPrevu: number;
+    coutMoReel: number;
+    coutAchatsPrevu: number;
+    coutAchatsReel: number;
+    coutSousTraitancePrevu: number;
+    coutSousTraitanceReel: number;
+    coutTotalPrevu: number;
+    coutTotalReel: number;
+    margePrevue: number;
+    margeReelle: number;
+    tauxMargePrevu: number;
+    tauxMargeReel: number;
+    ecartMarge: number;
+    heuresBudget: number;
+    heuresRealisees: number;
+    ecartHeures: number;
+    productivitePct: number;
+    avancementFacturationPct: number;
+    avancementTravauxPct: number;
+    estEnDepassementBudget: boolean;
+    estEnRetard: boolean;
+    niveauRisque: string;
+    lastUpdated: Date;
+}
