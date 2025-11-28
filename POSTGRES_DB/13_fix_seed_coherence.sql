@@ -11,10 +11,45 @@
 \echo '============================================'
 
 -- ============================================================================
--- 0. NETTOYAGE DES DOUBLONS DANS LES DIMENSIONS
+-- 0. CORRECTION TYPES COLONNES GOLD (evite overflow numerique)
 -- ============================================================================
 
-\echo '0. Nettoyage des doublons dimensions...'
+\echo '0. Correction types colonnes Gold...'
+
+DROP VIEW IF EXISTS gold.v_suivi_affaires CASCADE;
+DROP VIEW IF EXISTS gold.v_productivite_equipes CASCADE;
+
+ALTER TABLE gold.agg_ca_affaire ALTER COLUMN taux_marge_reel TYPE NUMERIC(10,2);
+ALTER TABLE gold.agg_ca_affaire ALTER COLUMN taux_marge_prevu TYPE NUMERIC(10,2);
+ALTER TABLE gold.agg_ca_affaire ALTER COLUMN productivite_pct TYPE NUMERIC(10,2);
+ALTER TABLE gold.agg_ca_affaire ALTER COLUMN avancement_facturation_pct TYPE NUMERIC(10,2);
+ALTER TABLE gold.agg_ca_affaire ALTER COLUMN avancement_travaux_pct TYPE NUMERIC(10,2);
+
+-- Recreer les vues
+CREATE OR REPLACE VIEW gold.v_suivi_affaires AS
+SELECT a.code AS affaire, a.libelle, c.raison_sociale AS client, a.etat,
+    a.date_debut_reelle, a.date_fin_prevue, aa.montant_commande, aa.montant_facture,
+    aa.montant_reste_a_facturer, aa.taux_marge_prevu, aa.taux_marge_reel, aa.ecart_marge,
+    aa.heures_budget, aa.heures_realisees, aa.ecart_heures, aa.avancement_facturation_pct,
+    aa.avancement_travaux_pct, aa.niveau_risque, aa.est_en_retard, aa.est_en_depassement_budget
+FROM gold.agg_ca_affaire aa
+JOIN silver.dim_affaire a ON aa.affaire_sk = a.affaire_sk AND a.is_current = TRUE
+LEFT JOIN silver.dim_client c ON aa.client_sk = c.client_sk AND c.is_current = TRUE
+ORDER BY aa.niveau_risque DESC, aa.montant_commande DESC;
+
+CREATE OR REPLACE VIEW gold.v_productivite_equipes AS
+SELECT sal.nom || ' ' || sal.prenom AS salarie, sal.poste, sal.qualification,
+    h.annee, h.mois, h.heures_total, h.heures_theoriques, h.taux_occupation,
+    h.heures_productives, h.taux_productivite, h.nb_affaires_travaillees, h.cout_horaire_moyen
+FROM gold.agg_heures_salarie h
+JOIN silver.dim_salarie sal ON h.salarie_sk = sal.salarie_sk AND sal.is_current = TRUE
+ORDER BY h.annee DESC, h.mois DESC, h.taux_productivite DESC;
+
+-- ============================================================================
+-- 0b. NETTOYAGE DES DOUBLONS DANS LES DIMENSIONS
+-- ============================================================================
+
+\echo '0b. Nettoyage des doublons dimensions...'
 
 -- Desactiver temporairement les contraintes FK
 SET session_replication_role = replica;
