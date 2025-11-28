@@ -18,3 +18,11 @@ export * from './dim-client.entity';
 export * from './dim-affaire.entity';
 export * from './dim-salarie.entity';
 export * from './dim-element.entity';
+
+// Audit Layer - Data Quality
+export * from './data-quality-rule.entity';
+export * from './data-quality-check.entity';
+export * from './data-anomaly.entity';
+
+// ETL Layer - Job Execution
+export * from './job-execution.entity';

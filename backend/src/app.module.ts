@@ -8,6 +8,8 @@ import { RhModule } from './modules/rh/rh.module';
 import { StockModule } from './modules/stock/stock.module';
 import { AnomaliesModule } from './modules/anomalies/anomalies.module';
 import { MlModule } from './modules/ml/ml.module';
+import { DataQualityModule } from './modules/data-quality/data-quality.module';
+import { EtlModule } from './modules/etl/etl.module';
 
 @Module({
   imports: [
@@ -42,6 +44,8 @@ import { MlModule } from './modules/ml/ml.module';
     StockModule,
     AnomaliesModule,
     MlModule,
+    DataQualityModule,
+    EtlModule,
   ],
 })
 export class AppModule {}

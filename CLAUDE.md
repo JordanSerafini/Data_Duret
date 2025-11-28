@@ -65,6 +65,22 @@ CALL audit.run_data_quality_checks();  -- Contrôles qualité données
 psql -U postgres -d dwh_groupe_duret -f POSTGRES_DB/12_dwh_optimizations.sql
 ```
 
+### Correction des incohérences de seed (script 13)
+
+Si les données ont déjà été chargées et présentent des incohérences (productivité 100%, budgets incorrects), exécuter :
+
+```bash
+psql -U postgres -d dwh_groupe_duret -f POSTGRES_DB/13_fix_seed_coherence.sql
+```
+
+Ce script corrige :
+- Productivité à 100% → ajoute ~20% d'heures non-productives (formation, réunions, etc.)
+- Doublons dans les dimensions Silver
+- Budget heures incohérent avec heures réalisées
+- Montants documents ≠ somme des lignes
+- Absence de règlements clients/fournisseurs
+- Inventaire stock initial manquant
+
 ## Architecture
 
 ### DWH Layers

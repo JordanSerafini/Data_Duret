@@ -17,6 +17,8 @@ const rh_module_1 = require("./modules/rh/rh.module");
 const stock_module_1 = require("./modules/stock/stock.module");
 const anomalies_module_1 = require("./modules/anomalies/anomalies.module");
 const ml_module_1 = require("./modules/ml/ml.module");
+const data_quality_module_1 = require("./modules/data-quality/data-quality.module");
+const etl_module_1 = require("./modules/etl/etl.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -49,6 +51,8 @@ exports.AppModule = AppModule = __decorate([
             stock_module_1.StockModule,
             anomalies_module_1.AnomaliesModule,
             ml_module_1.MlModule,
+            data_quality_module_1.DataQualityModule,
+            etl_module_1.EtlModule,
         ],
     })
 ], AppModule);

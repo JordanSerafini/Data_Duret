@@ -225,7 +225,7 @@ BEGIN
 
     TRUNCATE TABLE gold.agg_ca_affaire;
 
-    -- Agregation par affaire
+    -- Agregation par affaire (utilise sous-requetes pour eviter produit cartesien)
     INSERT INTO gold.agg_ca_affaire (
         affaire_sk, societe_sk, client_sk,
         montant_devis, montant_commande, montant_facture, montant_avoir,
@@ -238,22 +238,30 @@ BEGIN
         a.client_sk,
         a.montant_devis,
         a.montant_commande,
-        COALESCE(SUM(CASE WHEN d.type_document = 'FACTURE' THEN d.montant_ht ELSE 0 END), 0),
-        COALESCE(SUM(CASE WHEN d.type_document = 'AVOIR' THEN d.montant_ht ELSE 0 END), 0),
+        COALESCE(doc.montant_facture, 0),
+        COALESCE(doc.montant_avoir, 0),
         a.budget_heures,
-        COALESCE(SUM(mo.heures_total), 0),
+        COALESCE(mo.heures_total, 0),
         CASE WHEN a.montant_commande > 0 THEN
-            COALESCE(SUM(CASE WHEN d.type_document = 'FACTURE' THEN d.montant_ht ELSE 0 END), 0) / a.montant_commande * 100
+            COALESCE(doc.montant_facture, 0) / a.montant_commande * 100
         ELSE 0 END,
         CASE WHEN a.budget_heures > 0 THEN
-            COALESCE(SUM(mo.heures_total), 0) / a.budget_heures * 100
+            COALESCE(mo.heures_total, 0) / a.budget_heures * 100
         ELSE 0 END
     FROM silver.dim_affaire a
-    LEFT JOIN silver.fact_document_commercial d ON d.affaire_sk = a.affaire_sk
-    LEFT JOIN silver.fact_suivi_mo mo ON mo.affaire_sk = a.affaire_sk
-    WHERE a.is_current = TRUE
-    GROUP BY a.affaire_sk, a.societe_sk, a.client_sk, a.montant_devis,
-             a.montant_commande, a.budget_heures;
+    LEFT JOIN (
+        SELECT affaire_sk,
+               SUM(CASE WHEN type_document = 'FACTURE' THEN montant_ht ELSE 0 END) AS montant_facture,
+               SUM(CASE WHEN type_document = 'AVOIR' THEN montant_ht ELSE 0 END) AS montant_avoir
+        FROM silver.fact_document_commercial
+        GROUP BY affaire_sk
+    ) doc ON doc.affaire_sk = a.affaire_sk
+    LEFT JOIN (
+        SELECT affaire_sk, SUM(heures_total) AS heures_total
+        FROM silver.fact_suivi_mo
+        GROUP BY affaire_sk
+    ) mo ON mo.affaire_sk = a.affaire_sk
+    WHERE a.is_current = TRUE;
 
     GET DIAGNOSTICS v_rows_inserted = ROW_COUNT;
 

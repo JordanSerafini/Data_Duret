@@ -13,3 +13,7 @@ export * from './dim-client.entity';
 export * from './dim-affaire.entity';
 export * from './dim-salarie.entity';
 export * from './dim-element.entity';
+export * from './data-quality-rule.entity';
+export * from './data-quality-check.entity';
+export * from './data-anomaly.entity';
+export * from './job-execution.entity';

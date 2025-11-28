@@ -29,4 +29,8 @@ __exportStar(require("./dim-client.entity"), exports);
 __exportStar(require("./dim-affaire.entity"), exports);
 __exportStar(require("./dim-salarie.entity"), exports);
 __exportStar(require("./dim-element.entity"), exports);
+__exportStar(require("./data-quality-rule.entity"), exports);
+__exportStar(require("./data-quality-check.entity"), exports);
+__exportStar(require("./data-anomaly.entity"), exports);
+__exportStar(require("./job-execution.entity"), exports);
 //# sourceMappingURL=index.js.map
