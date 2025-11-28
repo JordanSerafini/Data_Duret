@@ -52,9 +52,17 @@ node scan_targets.js   # Scan for F_DOCENTETE tables
 
 ### ETL Execution (PostgreSQL)
 ```sql
-CALL etl.run_full_etl();           -- Full ETL
+CALL etl.run_full_etl();           -- Full ETL (inclut qualité + refresh vues)
 CALL etl.run_bronze_to_silver();   -- Bronze → Silver only
 CALL etl.run_silver_to_gold();     -- Silver → Gold only
+CALL etl.refresh_materialized_views(); -- Refresh vues matérialisées
+CALL audit.run_data_quality_checks();  -- Contrôles qualité données
+```
+
+### Optimisations DWH (script 12)
+
+```bash
+psql -U postgres -d dwh_groupe_duret -f POSTGRES_DB/12_dwh_optimizations.sql
 ```
 
 ## Architecture
@@ -69,7 +77,11 @@ CALL etl.run_silver_to_gold();     -- Silver → Gold only
 |-------|------|----------|
 | Silver | Dimensions | dim_temps, dim_societe, dim_client, dim_affaire, dim_compte |
 | Silver | Facts | fact_ecriture_compta, fact_document_commercial, fact_suivi_mo |
+| Silver | Partitioned | fact_ecriture_compta_partitioned, fact_document_commercial_partitioned |
 | Gold | Aggregates | agg_ca_periode, agg_ca_client, agg_ca_affaire, agg_tresorerie |
+| Gold | Materialized Views | mv_ca_societe_mensuel, mv_balance_client, mv_rentabilite_affaire |
+| Gold | ML Features | ml_features_client, ml_features_affaire |
+| Audit | Quality | data_quality_rules, data_quality_check, data_anomaly |
 
 ### Inter-System Mapping
 - `ref.mapping_tiers_mde`: Links MDE clients/fournisseurs to Sage compte tiers

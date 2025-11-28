@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
+  # PostgreSQL Database - Optimise pour Data Warehouse
   postgres:
     image: postgres:16-alpine
     container_name: dwh-postgres
@@ -9,16 +9,51 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: dwh_groupe_duret
+      # Optimisations PostgreSQL pour DWH
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=fr_FR.utf8"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./POSTGRES_DB:/docker-entrypoint-initdb.d:ro
+      - ./postgres-config:/etc/postgresql/conf.d:ro
     ports:
       - "5432:5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "effective_cache_size=1536MB"
+      - "-c"
+      - "maintenance_work_mem=256MB"
+      - "-c"
+      - "work_mem=64MB"
+      - "-c"
+      - "max_parallel_workers_per_gather=2"
+      - "-c"
+      - "max_parallel_workers=4"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "enable_partition_pruning=on"
+      - "-c"
+      - "jit=on"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   # NestJS API Backend
   api:
