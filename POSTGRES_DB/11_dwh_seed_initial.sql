@@ -270,7 +270,8 @@ SELECT
     'soustraitant' || n || '@email.fr',
     (ARRAY['ELECTRICITE', 'PLOMBERIE', 'CVC', 'PEINTURE', 'MACONNERIE'])[((n-1) % 5) + 1],
     (ARRAY['QUALIBAT', 'QUALIFELEC', 'RGE', 'ISO9001'])[((n-1) % 4) + 1],
-    (35 + (n % 20))::NUMERIC(10,2),
+    -- Taux horaire realiste: 45-75€ selon qualification
+    (45 + (n % 30))::NUMERIC(10,2),
     TRUE
 FROM generate_series(1, 30) AS n;
 
@@ -284,8 +285,10 @@ SELECT
            'SIMON', 'LAURENT', 'LEFEBVRE', 'MICHEL', 'GARCIA', 'DAVID', 'BERTRAND', 'ROUX', 'VINCENT', 'FOURNIER'])[((n-1) % 20) + 1],
     (ARRAY['Jean', 'Pierre', 'Michel', 'Philippe', 'Alain', 'Patrick', 'Jacques', 'Christophe', 'Stephane', 'Nicolas',
            'Marie', 'Sophie', 'Nathalie', 'Isabelle', 'Catherine', 'Christine', 'Sandrine', 'Valerie', 'Anne', 'Claire'])[((n-1) % 20) + 1],
-    DATE '1970-01-01' + (n * 150) * INTERVAL '1 day',
-    DATE '2020-01-01' + (n * 30) * INTERVAL '1 day',
+    -- Date naissance: entre 1960 et 1995 (30-65 ans en 2025)
+    DATE '1960-01-01' + ((n * 127) % 12775) * INTERVAL '1 day',
+    -- Date entree: entre 2015 et 2024 (max 10 ans d'anciennete)
+    DATE '2015-01-01' + ((n * 47) % 3287) * INTERVAL '1 day',
     CASE
         WHEN n <= 5 THEN 'Directeur'
         WHEN n <= 10 THEN 'Chef de chantier'
@@ -447,7 +450,7 @@ INSERT INTO bronze.mde_affaire (_source_id, societe_id, code, libelle, client_id
 SELECT
     n,
     1,
-    'AFF2024-' || LPAD(n::TEXT, 3, '0'),
+    'AFF2025-' || LPAD(n::TEXT, 3, '0'),
     (ARRAY['Renovation electrique', 'Installation neuve', 'Mise aux normes', 'Extension reseau', 'Maintenance annuelle',
            'Eclairage LED', 'Domotique', 'Borne de recharge', 'Photovoltaique', 'Courants faibles'])[((n-1) % 10) + 1] ||
     ' ' || (ARRAY['Batiment A', 'Batiment B', 'Site principal', 'Annexe', 'Entrepot', 'Bureau', 'Atelier'])[((n-1) % 7) + 1],
@@ -464,12 +467,28 @@ SELECT
     n || ' Rue du Chantier',
     LPAD((44000 + (n % 100))::TEXT, 5, '0'),
     (ARRAY['NANTES', 'RENNES', 'ANGERS', 'LE MANS', 'SAINT-NAZAIRE'])[((n-1) % 5) + 1],
-    (15000 + RANDOM() * 200000)::NUMERIC(15,2),
-    CASE WHEN n <= 40 THEN (15000 + RANDOM() * 200000)::NUMERIC(15,2) ELSE 0 END,
-    CASE WHEN n <= 30 THEN (10000 + RANDOM() * 150000)::NUMERIC(15,2) ELSE 0 END,
-    (15 + RANDOM() * 15)::NUMERIC(5,2),
-    (100 + RANDOM() * 1000)::NUMERIC(10,2),
-    CASE WHEN n <= 30 THEN (80 + RANDOM() * 800)::NUMERIC(10,2) ELSE 0 END
+    -- montant_devis: toujours genere
+    (15000 + (n * 3719) % 200000)::NUMERIC(15,2),
+    -- montant_commande: si en cours ou termine, doit exister si facture existe
+    CASE
+        WHEN n <= 30 THEN (15000 + (n * 3719) % 200000 * 0.95)::NUMERIC(15,2)  -- commande < devis
+        WHEN n <= 40 THEN (15000 + (n * 2897) % 180000)::NUMERIC(15,2)
+        ELSE 0
+    END,
+    -- montant_facture: ne peut pas depasser montant_commande
+    CASE
+        WHEN n <= 30 THEN LEAST(
+            (10000 + (n * 2341) % 150000)::NUMERIC(15,2),
+            (15000 + (n * 3719) % 200000 * 0.95)::NUMERIC(15,2)
+        )
+        ELSE 0
+    END,
+    -- marge_prevue: 15-30%
+    (15 + (n % 15))::NUMERIC(5,2),
+    -- budget_heures: sera recalcule par script 13
+    (100 + (n * 23) % 1000)::NUMERIC(10,2),
+    -- heures_realisees: sera recalcule par script 13
+    CASE WHEN n <= 30 THEN (80 + (n * 17) % 800)::NUMERIC(10,2) ELSE 0 END
 FROM generate_series(1, 50) AS n;
 
 -- Chantiers MDE
@@ -488,12 +507,17 @@ SELECT
     n || ' Rue du Chantier',
     LPAD((44000 + (n % 50))::TEXT, 5, '0'),
     (ARRAY['NANTES', 'RENNES', 'ANGERS', 'LE MANS', 'SAINT-NAZAIRE'])[((n-1) % 5) + 1],
-    (RANDOM() * 100)::NUMERIC(5,2)
+    -- Avancement coherent avec etat: PREPARATION=0-10%, EN_COURS=10-90%, TERMINE/CLOTURE=100%
+    CASE
+        WHEN ((n-1) % 5) = 0 THEN (n % 10)::NUMERIC(5,2)  -- PREPARATION: 0-10%
+        WHEN ((n-1) % 5) IN (1, 2) THEN (20 + (n * 7) % 70)::NUMERIC(5,2)  -- EN_COURS: 20-90%
+        ELSE 100.00  -- TERMINE/CLOTURE: 100%
+    END
 FROM generate_series(1, 100) AS n;
 
 -- Documents commerciaux MDE
 INSERT INTO bronze.mde_document_entete (_source_id, societe_id, type_document, numero, date_document, tiers_id, tiers_code, tiers_type, affaire_id, affaire_code, objet, montant_ht, montant_tva, montant_ttc, taux_tva, statut, date_validation)
--- Devis
+-- Devis (montants coherents: HT puis TVA=HT*0.20 puis TTC=HT*1.20)
 SELECT
     n,
     1,
@@ -506,15 +530,18 @@ SELECT
     ((n-1) % 50) + 1,
     'AFF2025-' || LPAD((((n-1) % 50) + 1)::TEXT, 3, '0'),
     'Devis travaux electriques',
-    (5000 + RANDOM() * 100000)::NUMERIC(15,2),
-    ((5000 + RANDOM() * 100000) * 0.20)::NUMERIC(15,2),
-    ((5000 + RANDOM() * 100000) * 1.20)::NUMERIC(15,2),
+    montant_ht,
+    (montant_ht * 0.20)::NUMERIC(15,2),
+    (montant_ht * 1.20)::NUMERIC(15,2),
     20.00,
     (ARRAY['BROUILLON', 'ENVOYE', 'ACCEPTE', 'REFUSE'])[((n-1) % 4) + 1],
     CASE WHEN n % 4 = 3 THEN DATE '2025-01-05' + (n * 2) * INTERVAL '1 day' ELSE NULL END
-FROM generate_series(1, 100) AS n
+FROM (
+    SELECT n, (5000 + (n * 997) % 100000)::NUMERIC(15,2) AS montant_ht
+    FROM generate_series(1, 100) AS n
+) sub
 UNION ALL
--- Factures
+-- Factures (montants coherents)
 SELECT
     100 + n,
     1,
@@ -527,13 +554,16 @@ SELECT
     ((n-1) % 40) + 1,
     'AFF2025-' || LPAD((((n-1) % 40) + 1)::TEXT, 3, '0'),
     'Facture travaux',
-    (3000 + RANDOM() * 80000)::NUMERIC(15,2),
-    ((3000 + RANDOM() * 80000) * 0.20)::NUMERIC(15,2),
-    ((3000 + RANDOM() * 80000) * 1.20)::NUMERIC(15,2),
+    montant_ht,
+    (montant_ht * 0.20)::NUMERIC(15,2),
+    (montant_ht * 1.20)::NUMERIC(15,2),
     20.00,
     'VALIDEE',
     DATE '2025-02-05' + (n * 3) * INTERVAL '1 day'
-FROM generate_series(1, 80) AS n;
+FROM (
+    SELECT n, (3000 + (n * 853) % 80000)::NUMERIC(15,2) AS montant_ht
+    FROM generate_series(1, 80) AS n
+) sub;
 
 -- Lignes documents
 INSERT INTO bronze.mde_document_ligne (_source_id, entete_id, numero_ligne, element_id, element_code, designation, quantite, unite, prix_unitaire, remise_pct, montant_ht, taux_tva)

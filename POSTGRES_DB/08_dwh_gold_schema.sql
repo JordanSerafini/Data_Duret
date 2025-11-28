@@ -237,7 +237,7 @@ CREATE TABLE gold.agg_heures_salarie (
     heures_supplementaires NUMERIC(10,2) DEFAULT 0,
     heures_total NUMERIC(10,2) DEFAULT 0,
     heures_theoriques NUMERIC(10,2) DEFAULT 0,
-    taux_occupation NUMERIC(5,2),
+    taux_occupation NUMERIC(10,2),
     -- Affectation
     heures_productives NUMERIC(10,2) DEFAULT 0,
     heures_non_productives NUMERIC(10,2) DEFAULT 0,
@@ -355,7 +355,7 @@ CREATE TABLE gold.kpi_global (
     -- KPIs RH
     kpi_effectif_moyen NUMERIC(6,1),
     kpi_heures_productives NUMERIC(10,2),
-    kpi_taux_occupation NUMERIC(5,2),
+    kpi_taux_occupation NUMERIC(10,2),
     kpi_cout_mo_par_heure NUMERIC(8,2),
     kpi_ca_par_salarie NUMERIC(15,2),
     -- KPIs Affaires

@@ -2,13 +2,17 @@
 -- CORRECTION DES INCOHERENCES DE SEED
 -- Script de remediation pour des donnees realistes
 -- A executer apres 11_dwh_seed_initial.sql si les donnees sont deja chargees
+-- Version 2.0 - Corrections completes
 -- ============================================================================
 
 \c dwh_groupe_duret;
 
 \echo '============================================'
-\echo 'DEBUT CORRECTION INCOHERENCES SEED'
+\echo 'DEBUT CORRECTION INCOHERENCES SEED v2.0'
 \echo '============================================'
+
+-- Note: Les corrections des bases sources (sage_compta, mde_erp) ne sont pas necessaires
+-- car les donnees sont deja corrigees dans la couche Bronze du DWH
 
 -- ============================================================================
 -- 0. CORRECTION TYPES COLONNES GOLD (evite overflow numerique)
@@ -24,6 +28,12 @@ ALTER TABLE gold.agg_ca_affaire ALTER COLUMN taux_marge_prevu TYPE NUMERIC(10,2)
 ALTER TABLE gold.agg_ca_affaire ALTER COLUMN productivite_pct TYPE NUMERIC(10,2);
 ALTER TABLE gold.agg_ca_affaire ALTER COLUMN avancement_facturation_pct TYPE NUMERIC(10,2);
 ALTER TABLE gold.agg_ca_affaire ALTER COLUMN avancement_travaux_pct TYPE NUMERIC(10,2);
+
+-- Correction taux_occupation dans agg_heures_salarie (evite overflow > 999.99%)
+ALTER TABLE gold.agg_heures_salarie ALTER COLUMN taux_occupation TYPE NUMERIC(10,2);
+
+-- Correction kpi_taux_occupation dans kpi_global
+ALTER TABLE gold.kpi_global ALTER COLUMN kpi_taux_occupation TYPE NUMERIC(10,2);
 
 -- Recreer les vues
 CREATE OR REPLACE VIEW gold.v_suivi_affaires AS
@@ -237,13 +247,83 @@ FROM bronze.mde_element e WHERE e.type_element = 'FOURNITURE' AND e._source_id <
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
--- 5. CORRECTION CODES AFFAIRES
+-- 5. CORRECTION CODES AFFAIRES ET DONNEES DATEES
 -- ============================================================================
 
 \echo '5. Harmonisation codes affaires...'
 
 UPDATE bronze.mde_affaire SET code = REPLACE(code, '2024', '2025') WHERE code LIKE '%2024%';
 UPDATE bronze.mde_chantier SET affaire_code = REPLACE(affaire_code, '2024', '2025') WHERE affaire_code LIKE '%2024%';
+
+-- ============================================================================
+-- 5b. CORRECTION DATES SALARIES BRONZE
+-- ============================================================================
+
+\echo '5b. Correction dates salaries bronze...'
+
+-- Dates de naissance impossibles (moins de 18 ans en 2025)
+UPDATE bronze.mde_salarie SET
+    date_naissance = DATE '1970-01-01' + ((_source_id * 127) % 10000) * INTERVAL '1 day'
+WHERE date_naissance > DATE '2007-01-01';
+
+-- Dates d'embauche dans le futur
+UPDATE bronze.mde_salarie SET
+    date_entree = DATE '2020-01-01' + ((_source_id * 47) % 1825) * INTERVAL '1 day'
+WHERE date_entree > CURRENT_DATE;
+
+-- ============================================================================
+-- 5c. CORRECTION SIRET INVALIDES
+-- ============================================================================
+
+\echo '5c. Correction SIRET invalides...'
+
+-- Regenerer des SIRET valides (14 chiffres uniques)
+UPDATE bronze.sage_client SET
+    siret = LPAD((societe_id::BIGINT * 10000000000 + _source_id * 1000 + ((_source_id * 7) % 1000))::TEXT, 14, '0')
+WHERE LENGTH(siret) != 14 OR siret !~ '^[0-9]{14}$';
+
+UPDATE bronze.sage_fournisseur SET
+    siret = LPAD((societe_id::BIGINT * 10000000000 + 500000 + _source_id * 1000 + ((_source_id * 13) % 1000))::TEXT, 14, '0')
+WHERE LENGTH(siret) != 14 OR siret !~ '^[0-9]{14}$';
+
+UPDATE bronze.mde_sous_traitant SET
+    siret = LPAD((societe_id::BIGINT * 10000000000 + 800000 + _source_id * 1000 + ((_source_id * 17) % 1000))::TEXT, 14, '0')
+WHERE LENGTH(siret) != 14 OR siret !~ '^[0-9]{14}$';
+
+-- ============================================================================
+-- 5d. CORRECTION AVANCEMENT CHANTIERS
+-- ============================================================================
+
+\echo '5d. Correction avancement chantiers...'
+
+-- Chantiers TERMINE/CLOTURE doivent avoir 100% avancement
+UPDATE bronze.mde_chantier SET avancement_pct = 100.00
+WHERE etat IN ('TERMINE', 'CLOTURE') AND avancement_pct < 100;
+
+-- Chantiers PREPARATION doivent avoir 0-10% avancement
+UPDATE bronze.mde_chantier SET avancement_pct = (RANDOM() * 10)::NUMERIC(5,2)
+WHERE etat = 'PREPARATION' AND avancement_pct > 10;
+
+-- ============================================================================
+-- 5e. CORRECTION TAUX SOUS-TRAITANTS
+-- ============================================================================
+
+\echo '5e. Correction taux sous-traitants...'
+
+-- Taux horaire realiste (45-75€ au lieu de 35-54€)
+UPDATE bronze.mde_sous_traitant SET
+    taux_horaire = taux_horaire + 15 + (_source_id % 20)
+WHERE taux_horaire < 55;
+
+-- ============================================================================
+-- 5f. CORRECTION AFFAIRES SANS COMMANDE MAIS AVEC FACTURE
+-- ============================================================================
+
+\echo '5f. Correction affaires sans commande...'
+
+UPDATE bronze.mde_affaire SET
+    montant_commande = montant_facture * (1.0 + (_source_id % 10) * 0.02)
+WHERE montant_commande = 0 AND montant_facture > 0;
 
 -- ============================================================================
 -- 6. RELANCER ETL
@@ -287,10 +367,48 @@ CALL etl.run_silver_to_gold();
 \echo 'VERIFICATION DES CORRECTIONS'
 \echo '============================================'
 
+-- KPIs principaux
 SELECT 'Productivite salaries' AS kpi, ROUND(AVG(taux_productivite), 1)::TEXT || '%' AS valeur, '75-90%' AS cible FROM gold.agg_heures_salarie
 UNION ALL SELECT 'Ratio Budget/Realise', ROUND(AVG(CASE WHEN heures_budget > 0 AND heures_realisees > 0 THEN heures_realisees / heures_budget * 100 END), 1)::TEXT || '%', '90-110%' FROM gold.agg_ca_affaire
 UNION ALL SELECT 'Heures avec affaire', ROUND(COUNT(CASE WHEN affaire_sk IS NOT NULL THEN 1 END)::NUMERIC / COUNT(*) * 100, 1)::TEXT || '%', '75-85%' FROM silver.fact_suivi_mo;
 
+-- Verification dates salaries
+\echo ''
+\echo 'Verification dates salaries:'
+SELECT 'Salaries < 18 ans' AS check_type, COUNT(*) AS count, 'Doit etre 0' AS expected
+FROM bronze.mde_salarie WHERE date_naissance > DATE '2007-01-01'
+UNION ALL
+SELECT 'Embauches futures', COUNT(*), 'Doit etre 0'
+FROM bronze.mde_salarie WHERE date_entree > CURRENT_DATE;
+
+-- Verification SIRET
+\echo ''
+\echo 'Verification SIRET:'
+SELECT 'SIRET clients invalides' AS check_type, COUNT(*) AS count, 'Doit etre 0' AS expected
+FROM bronze.sage_client WHERE LENGTH(siret) != 14 OR siret !~ '^[0-9]{14}$'
+UNION ALL
+SELECT 'SIRET fournisseurs invalides', COUNT(*), 'Doit etre 0'
+FROM bronze.sage_fournisseur WHERE LENGTH(siret) != 14 OR siret !~ '^[0-9]{14}$';
+
+-- Verification avancement chantiers
+\echo ''
+\echo 'Verification avancement chantiers:'
+SELECT 'Chantiers TERMINE < 100%' AS check_type, COUNT(*) AS count, 'Doit etre 0' AS expected
+FROM bronze.mde_chantier WHERE etat IN ('TERMINE', 'CLOTURE') AND avancement_pct < 100;
+
+-- Verification coherence affaires
+\echo ''
+\echo 'Verification coherence affaires:'
+SELECT 'Affaires facturees sans commande' AS check_type, COUNT(*) AS count, 'Doit etre 0' AS expected
+FROM bronze.mde_affaire WHERE montant_commande = 0 AND montant_facture > 0;
+
+-- Verification codes dates coherents
+\echo ''
+\echo 'Verification codes affaires:'
+SELECT 'Codes AFF2024 (obsoletes)' AS check_type, COUNT(*) AS count, 'Doit etre 0' AS expected
+FROM bronze.mde_affaire WHERE code LIKE '%2024%';
+
+\echo ''
 \echo '============================================'
-\echo 'FIN CORRECTION INCOHERENCES'
+\echo 'FIN CORRECTION INCOHERENCES v2.0'
 \echo '============================================'
