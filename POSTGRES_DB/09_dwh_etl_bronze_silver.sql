@@ -252,6 +252,11 @@ BEGIN
     AND mde.is_current = TRUE
     AND sage.is_current = TRUE;
 
+    -- S'assurer que mde_code = code pour tous les clients (necessaire pour le join documents)
+    UPDATE silver.dim_client
+    SET mde_code = code
+    WHERE mde_code IS NULL AND is_current = TRUE;
+
     -- Calcul du segment client
     UPDATE silver.dim_client
     SET segment_client = CASE

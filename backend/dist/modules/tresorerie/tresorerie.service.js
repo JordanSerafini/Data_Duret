@@ -27,21 +27,21 @@ let TresorerieService = class TresorerieService {
         const queryBuilder = this.tresorerieRepository
             .createQueryBuilder('t')
             .select([
-            't.annee',
-            't.mois',
-            't.jour',
+            't.annee AS annee',
+            't.mois AS mois',
+            't.jour AS jour',
             't.niveau_agregation AS niveau',
-            't.solde_banque',
-            't.solde_caisse',
-            't.solde_total',
-            't.encaissements',
-            't.decaissements',
-            't.flux_net',
-            't.creances_clients',
-            't.creances_echues',
-            't.dettes_fournisseurs',
-            't.dettes_echues',
-            't.bfr_estime',
+            't.solde_banque AS solde_banque',
+            't.solde_caisse AS solde_caisse',
+            't.solde_total AS solde_total',
+            't.encaissements AS encaissements',
+            't.decaissements AS decaissements',
+            't.flux_net AS flux_net',
+            't.creances_clients AS creances_clients',
+            't.creances_echues AS creances_echues',
+            't.dettes_fournisseurs AS dettes_fournisseurs',
+            't.dettes_echues AS dettes_echues',
+            't.bfr_estime AS bfr_estime',
         ]);
         if (filter.annee) {
             queryBuilder.andWhere('t.annee = :annee', { annee: filter.annee });

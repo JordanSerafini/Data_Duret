@@ -81,6 +81,21 @@ Ce script corrige :
 - Absence de règlements clients/fournisseurs
 - Inventaire stock initial manquant
 
+### Correction des données Trésorerie (script 14)
+
+Si la page trésorerie du frontend n'affiche pas de données, exécuter :
+
+```bash
+psql -U postgres -d dwh_groupe_duret -f POSTGRES_DB/14_fix_tresorerie.sql
+```
+
+Ce script corrige :
+- Ajout d'écritures bancaires (encaissements/décaissements) dans Bronze
+- Re-exécution ETL pour charger les écritures dans Silver
+- Chargement table `gold.agg_tresorerie` avec soldes et flux
+- Chargement table `gold.agg_balance_agee_client` avec balance âgée par client
+- Mise à jour des KPIs trésorerie dans `gold.kpi_global`
+
 ## Architecture
 
 ### DWH Layers

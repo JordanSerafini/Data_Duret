@@ -114,9 +114,10 @@ export class EtlService {
         .where('j.start_time >= :date', { date: sevenDaysAgo })
         .groupBy('j.status')
         .getRawMany(),
-      this.jobRepository.findOne({
+      this.jobRepository.find({
         order: { startTime: 'DESC' },
-      }),
+        take: 1,
+      }).then(results => results[0] || null),
       this.jobRepository
         .createQueryBuilder('j')
         .select(
@@ -138,8 +139,9 @@ export class EtlService {
       },
       last_7_days: weekStats.reduce(
         (acc, item) => {
-          acc[item.status.toLowerCase()] = {
-            count: parseInt(item.count),
+          const status = (item.j_status || item.status || 'unknown').toLowerCase();
+          acc[status] = {
+            count: parseInt(item.count) || 0,
             inserts: parseInt(item.total_inserts) || 0,
             updates: parseInt(item.total_updates) || 0,
           };

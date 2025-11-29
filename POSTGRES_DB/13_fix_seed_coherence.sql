@@ -256,6 +256,21 @@ UPDATE bronze.mde_affaire SET code = REPLACE(code, '2024', '2025') WHERE code LI
 UPDATE bronze.mde_chantier SET affaire_code = REPLACE(affaire_code, '2024', '2025') WHERE affaire_code LIKE '%2024%';
 
 -- ============================================================================
+-- 5a. CORRECTION TIERS_CODE DOCUMENTS
+-- ============================================================================
+
+\echo '5a. Correction tiers_code documents...'
+
+-- Regenerer tiers_code a partir de tiers_id
+UPDATE bronze.mde_document_entete
+SET tiers_code = CASE
+    WHEN tiers_type = 'CLIENT' THEN 'C' || LPAD(tiers_id::TEXT, 4, '0')
+    WHEN tiers_type = 'FOURNISSEUR' THEN 'F' || LPAD(tiers_id::TEXT, 4, '0')
+    ELSE NULL
+END
+WHERE tiers_code IS NULL OR tiers_code = '';
+
+-- ============================================================================
 -- 5b. CORRECTION DATES SALARIES BRONZE
 -- ============================================================================
 
