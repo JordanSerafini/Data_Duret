@@ -39,6 +39,12 @@ let TresorerieController = class TresorerieController {
     async getClientsRisqueCredit(filter, seuil) {
         return this.tresorerieService.getClientsRisqueCredit(filter, seuil || 60);
     }
+    async getTensionScore(filter) {
+        return this.tresorerieService.getTensionScore(filter);
+    }
+    async getTresorerieForecast(filter) {
+        return this.tresorerieService.getTresorerieForecast(filter);
+    }
 };
 exports.TresorerieController = TresorerieController;
 __decorate([
@@ -101,6 +107,24 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.PeriodeFilterDto, Number]),
     __metadata("design:returntype", Promise)
 ], TresorerieController.prototype, "getClientsRisqueCredit", null);
+__decorate([
+    (0, common_1.Get)('tension'),
+    (0, swagger_1.ApiOperation)({ summary: 'Score de tension de trésorerie' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Score composite avec ratios et alertes' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], TresorerieController.prototype, "getTensionScore", null);
+__decorate([
+    (0, common_1.Get)('forecast'),
+    (0, swagger_1.ApiOperation)({ summary: 'Prévision de trésorerie 3 mois' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Prévision avec historique et tendance' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], TresorerieController.prototype, "getTresorerieForecast", null);
 exports.TresorerieController = TresorerieController = __decorate([
     (0, swagger_1.ApiTags)('tresorerie'),
     (0, common_1.Controller)('tresorerie'),

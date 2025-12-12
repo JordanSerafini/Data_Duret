@@ -58,4 +58,20 @@ export class TresorerieController {
   ) {
     return this.tresorerieService.getClientsRisqueCredit(filter, seuil || 60);
   }
+
+  // ==================== SCORE DE TENSION & PRÉVISION ====================
+
+  @Get('tension')
+  @ApiOperation({ summary: 'Score de tension de trésorerie' })
+  @ApiResponse({ status: 200, description: 'Score composite avec ratios et alertes' })
+  async getTensionScore(@Query() filter: PeriodeFilterDto) {
+    return this.tresorerieService.getTensionScore(filter);
+  }
+
+  @Get('forecast')
+  @ApiOperation({ summary: 'Prévision de trésorerie 3 mois' })
+  @ApiResponse({ status: 200, description: 'Prévision avec historique et tendance' })
+  async getTresorerieForecast(@Query() filter: PeriodeFilterDto) {
+    return this.tresorerieService.getTresorerieForecast(filter);
+  }
 }
