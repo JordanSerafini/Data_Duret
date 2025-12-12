@@ -4,7 +4,7 @@ import { TresorerieService } from './tresorerie.service';
 import { PeriodeFilterDto, PaginationDto } from '../../common/dto';
 
 @ApiTags('tresorerie')
-@Controller('api/tresorerie')
+@Controller('tresorerie')
 export class TresorerieController {
   constructor(private readonly tresorerieService: TresorerieService) {}
 

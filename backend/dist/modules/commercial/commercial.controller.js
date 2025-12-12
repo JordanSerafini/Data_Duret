@@ -157,7 +157,7 @@ __decorate([
 ], CommercialController.prototype, "getAffaireById", null);
 exports.CommercialController = CommercialController = __decorate([
     (0, swagger_1.ApiTags)('commercial'),
-    (0, common_1.Controller)('api/commercial'),
+    (0, common_1.Controller)('commercial'),
     __metadata("design:paramtypes", [commercial_service_1.CommercialService])
 ], CommercialController);
 //# sourceMappingURL=commercial.controller.js.map

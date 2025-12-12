@@ -4,7 +4,7 @@ import { RhService } from './rh.service';
 import { PeriodeFilterDto, PaginationDto } from '../../common/dto';
 
 @ApiTags('rh')
-@Controller('api/rh')
+@Controller('rh')
 export class RhController {
   constructor(private readonly rhService: RhService) {}
 

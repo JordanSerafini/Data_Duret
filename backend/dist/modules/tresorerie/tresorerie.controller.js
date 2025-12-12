@@ -103,7 +103,7 @@ __decorate([
 ], TresorerieController.prototype, "getClientsRisqueCredit", null);
 exports.TresorerieController = TresorerieController = __decorate([
     (0, swagger_1.ApiTags)('tresorerie'),
-    (0, common_1.Controller)('api/tresorerie'),
+    (0, common_1.Controller)('tresorerie'),
     __metadata("design:paramtypes", [tresorerie_service_1.TresorerieService])
 ], TresorerieController);
 //# sourceMappingURL=tresorerie.controller.js.map

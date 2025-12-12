@@ -4,7 +4,7 @@ import { AnomaliesService } from './anomalies.service';
 import { PeriodeFilterDto } from '../../common/dto';
 
 @ApiTags('anomalies')
-@Controller('api/anomalies')
+@Controller('anomalies')
 export class AnomaliesController {
   constructor(private readonly anomaliesService: AnomaliesService) {}
 

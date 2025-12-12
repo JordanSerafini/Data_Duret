@@ -68,8 +68,8 @@ let CommercialService = class CommercialService {
         const queryBuilder = this.caPeriodeRepository
             .createQueryBuilder('ca')
             .select([
-            'ca.annee',
-            'ca.mois',
+            'ca.annee AS annee',
+            'ca.mois AS mois',
             'SUM(ca.ca_facture) AS ca_facture',
             'SUM(ca.ca_commande) AS ca_commande',
             'SUM(ca.ca_devis) AS ca_devis',
@@ -151,11 +151,15 @@ let CommercialService = class CommercialService {
             .createQueryBuilder('cac')
             .leftJoin(entities_1.DimClient, 'c', 'cac.client_sk = c.client_sk AND c.is_current = true')
             .select([
-            'c.raison_sociale',
-            'c.ville',
-            'cac.ca_cumule',
-            'cac.taux_marge',
-            'cac.segment_ca',
+            'c.client_sk AS client_sk',
+            'c.code AS code',
+            'c.raison_sociale AS raison_sociale',
+            'c.ville AS ville',
+            'cac.ca_cumule AS ca_cumule',
+            'cac.marge_brute AS marge_totale',
+            'cac.taux_marge AS taux_marge',
+            'cac.nb_factures AS nb_factures',
+            'c.segment_client AS segment',
         ]);
         if (filter.annee) {
             queryBuilder.andWhere('cac.annee = :annee', { annee: filter.annee });
@@ -268,11 +272,12 @@ let CommercialService = class CommercialService {
         return queryBuilder.getRawMany();
     }
     async getSegments() {
-        const queryBuilder = this.caClientRepository
-            .createQueryBuilder('cac')
-            .select('DISTINCT cac.segment_ca', 'segment')
-            .where('cac.segment_ca IS NOT NULL')
-            .orderBy('cac.segment_ca', 'ASC');
+        const queryBuilder = this.clientRepository
+            .createQueryBuilder('c')
+            .select('DISTINCT c.segment_client', 'segment')
+            .where('c.segment_client IS NOT NULL')
+            .andWhere('c.is_current = true')
+            .orderBy('c.segment_client', 'ASC');
         const results = await queryBuilder.getRawMany();
         return results.map((r) => r.segment);
     }

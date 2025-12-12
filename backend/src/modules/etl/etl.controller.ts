@@ -10,7 +10,7 @@ import { EtlService } from './etl.service';
 import { PaginationDto } from '../../common/dto';
 
 @ApiTags('etl')
-@Controller('api/etl')
+@Controller('etl')
 export class EtlController {
   constructor(private readonly etlService: EtlService) {}
 

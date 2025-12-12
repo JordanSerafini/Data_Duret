@@ -117,7 +117,7 @@ __decorate([
 ], RhController.prototype, "getHeuresParSalarie", null);
 exports.RhController = RhController = __decorate([
     (0, swagger_1.ApiTags)('rh'),
-    (0, common_1.Controller)('api/rh'),
+    (0, common_1.Controller)('rh'),
     __metadata("design:paramtypes", [rh_service_1.RhService])
 ], RhController);
 //# sourceMappingURL=rh.controller.js.map

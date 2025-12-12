@@ -4,7 +4,7 @@ import { CommercialService } from './commercial.service';
 import { PeriodeFilterDto, PaginationDto } from '../../common/dto';
 
 @ApiTags('commercial')
-@Controller('api/commercial')
+@Controller('commercial')
 export class CommercialController {
   constructor(private readonly commercialService: CommercialService) {}
 

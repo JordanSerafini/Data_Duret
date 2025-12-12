@@ -18,7 +18,7 @@ import { DataQualityService } from './data-quality.service';
 import { PaginationDto } from '../../common/dto';
 
 @ApiTags('data-quality')
-@Controller('api/data-quality')
+@Controller('data-quality')
 export class DataQualityController {
   constructor(private readonly dataQualityService: DataQualityService) {}
 

@@ -166,7 +166,7 @@ __decorate([
 ], MlController.prototype, "getAffaireFeatures", null);
 exports.MlController = MlController = __decorate([
     (0, swagger_1.ApiTags)('ml'),
-    (0, common_1.Controller)('api/ml'),
+    (0, common_1.Controller)('ml'),
     __metadata("design:paramtypes", [ml_service_1.MlService])
 ], MlController);
 //# sourceMappingURL=ml.controller.js.map

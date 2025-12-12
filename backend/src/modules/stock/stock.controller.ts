@@ -6,7 +6,7 @@ import { PeriodeFilterDto, PaginationDto } from '../../common/dto';
 import { StockFilterDto } from './dto/stock-filter.dto';
 
 @ApiTags('stock')
-@Controller('api/stock')
+@Controller('stock')
 export class StockController {
   constructor(private readonly stockService: StockService) {}
 

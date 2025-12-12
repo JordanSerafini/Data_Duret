@@ -4,7 +4,7 @@ import { MlService } from './ml.service';
 import { PaginationDto } from '../../common/dto';
 
 @ApiTags('ml')
-@Controller('api/ml')
+@Controller('ml')
 export class MlController {
   constructor(private readonly mlService: MlService) {}
 

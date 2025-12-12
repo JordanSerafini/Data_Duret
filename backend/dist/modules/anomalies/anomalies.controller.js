@@ -109,7 +109,7 @@ __decorate([
 ], AnomaliesController.prototype, "getAlertesStock", null);
 exports.AnomaliesController = AnomaliesController = __decorate([
     (0, swagger_1.ApiTags)('anomalies'),
-    (0, common_1.Controller)('api/anomalies'),
+    (0, common_1.Controller)('anomalies'),
     __metadata("design:paramtypes", [anomalies_service_1.AnomaliesService])
 ], AnomaliesController);
 //# sourceMappingURL=anomalies.controller.js.map

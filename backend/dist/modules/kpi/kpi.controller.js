@@ -98,7 +98,7 @@ __decorate([
 ], KpiController.prototype, "getKpisBySociete", null);
 exports.KpiController = KpiController = __decorate([
     (0, swagger_1.ApiTags)('kpi'),
-    (0, common_1.Controller)('api/kpi'),
+    (0, common_1.Controller)('kpi'),
     __metadata("design:paramtypes", [kpi_service_1.KpiService])
 ], KpiController);
 //# sourceMappingURL=kpi.controller.js.map

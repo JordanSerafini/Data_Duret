@@ -4,7 +4,7 @@ import { KpiService } from './kpi.service';
 import { PeriodeFilterDto } from '../../common/dto';
 
 @ApiTags('kpi')
-@Controller('api/kpi')
+@Controller('kpi')
 export class KpiController {
   constructor(private readonly kpiService: KpiService) {}
 

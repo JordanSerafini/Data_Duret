@@ -125,7 +125,7 @@ __decorate([
 ], StockController.prototype, "getValeurParFamille", null);
 exports.StockController = StockController = __decorate([
     (0, swagger_1.ApiTags)('stock'),
-    (0, common_1.Controller)('api/stock'),
+    (0, common_1.Controller)('stock'),
     __metadata("design:paramtypes", [stock_service_1.StockService])
 ], StockController);
 //# sourceMappingURL=stock.controller.js.map
