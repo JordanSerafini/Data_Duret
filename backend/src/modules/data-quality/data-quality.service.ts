@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, IsNull, Not } from 'typeorm';
+import { Repository, MoreThanOrEqual, IsNull } from 'typeorm';
 import {
   DataQualityRule,
   DataQualityCheck,
@@ -264,16 +264,49 @@ export class DataQualityService {
   // ==================== DASHBOARD ====================
 
   async getDashboard() {
-    const [checksSummary, anomaliesSummary, rules] = await Promise.all([
+    const [checksSummary, anomaliesSummary, activeRules, allRules, recentFailures] = await Promise.all([
       this.getChecksSummary(),
       this.getAnomaliesSummary(),
       this.getActiveRules(),
+      this.getRules(),
+      this.getFailedChecks({ page: 1, limit: 10 }),
     ]);
 
+    // Format by_severity as array for frontend
+    const bySeverityArray = Object.entries(anomaliesSummary.by_severity).map(([severity, count]) => ({
+      severity: severity.toUpperCase(),
+      count: count as number,
+    }));
+
+    // Format by_layer as array for frontend
+    const byLayerArray = Object.entries(anomaliesSummary.by_layer).map(([layer, anomalyCount]) => ({
+      layer: layer.toUpperCase(),
+      rules: allRules.filter(r => r.layer?.toUpperCase() === layer.toUpperCase()).length,
+      checks_today: 0, // Would need additional query
+      failures: 0, // Would need additional query
+      anomalies: anomalyCount as number,
+    }));
+
     return {
+      // Summary structure expected by frontend
+      summary: {
+        total_rules: allRules.length,
+        active_rules: activeRules.length,
+        total_checks_today: checksSummary.today.total,
+        passed_checks: checksSummary.today.passed,
+        failed_checks: checksSummary.today.failed,
+        pass_rate: parseFloat(checksSummary.today.success_rate as string) || 0,
+        total_anomalies: anomaliesSummary.last_30_days,
+        unresolved_anomalies: anomaliesSummary.unresolved,
+      },
+      by_layer: byLayerArray,
+      by_severity: bySeverityArray,
+      recent_failures: recentFailures.data,
+      trend: [], // Would need historical data query
+      // Also keep original format for backward compatibility
       checks: checksSummary,
       anomalies: anomaliesSummary,
-      rules_count: rules.length,
+      rules_count: activeRules.length,
     };
   }
 }
