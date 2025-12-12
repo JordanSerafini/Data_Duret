@@ -52,6 +52,12 @@ let StockController = class StockController {
     async getStockHealthScore(filter) {
         return this.stockService.getStockHealthScore(filter);
     }
+    async getAbcXyzAnalysis(filter) {
+        return this.stockService.getAbcXyzAnalysis(filter);
+    }
+    async getReorderRecommendations(filter) {
+        return this.stockService.getReorderRecommendations(filter);
+    }
 };
 exports.StockController = StockController;
 __decorate([
@@ -147,6 +153,24 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
     __metadata("design:returntype", Promise)
 ], StockController.prototype, "getStockHealthScore", null);
+__decorate([
+    (0, common_1.Get)('abc-xyz'),
+    (0, swagger_1.ApiOperation)({ summary: 'Analyse ABC/XYZ des stocks (classification inventaire BTP)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Matrice ABC/XYZ avec recommandations' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], StockController.prototype, "getAbcXyzAnalysis", null);
+__decorate([
+    (0, common_1.Get)('reorder'),
+    (0, swagger_1.ApiOperation)({ summary: 'Recommandations de réapprovisionnement (ROP, EOQ)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Actions de réapprovisionnement par urgence' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], StockController.prototype, "getReorderRecommendations", null);
 exports.StockController = StockController = __decorate([
     (0, swagger_1.ApiTags)('stock'),
     (0, common_1.Controller)('stock'),

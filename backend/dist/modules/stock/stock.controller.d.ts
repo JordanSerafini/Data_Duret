@@ -65,4 +65,117 @@ export declare class StockController {
             taux_valeur_risque: number;
         };
     }>;
+    getAbcXyzAnalysis(filter: PeriodeFilterDto): Promise<{
+        synthese: {
+            nb_articles: number;
+            valeur_totale: number;
+            repartition_abc: {
+                A: number;
+                B: number;
+                C: number;
+            };
+            repartition_xyz: {
+                X: number;
+                Y: number;
+                Z: number;
+            };
+            valeur_par_abc?: undefined;
+            pourcentage_valeur_abc?: undefined;
+        };
+        matrice: {};
+        articles: never[];
+        recommandations: never[];
+    } | {
+        synthese: {
+            nb_articles: number;
+            valeur_totale: number;
+            repartition_abc: {
+                A: number;
+                B: number;
+                C: number;
+            };
+            repartition_xyz: {
+                X: number;
+                Y: number;
+                Z: number;
+            };
+            valeur_par_abc: {
+                A: number;
+                B: number;
+                C: number;
+            };
+            pourcentage_valeur_abc: {
+                A: number;
+                B: number;
+                C: number;
+            };
+        };
+        matrice: Record<string, {
+            count: number;
+            valeur: number;
+            articles: any[];
+        }>;
+        articles: any[];
+        recommandations: {
+            type: string;
+            priorite: "HAUTE" | "MOYENNE" | "BASSE";
+            classe: string;
+            message: string;
+            nb_articles: number;
+        }[];
+    }>;
+    getReorderRecommendations(filter: PeriodeFilterDto): Promise<{
+        synthese: {
+            nb_articles_total: number;
+            nb_actions_requises: number;
+            par_urgence: {
+                immediat: number;
+                urgent: number;
+                planifie: number;
+            };
+            budget_estime: {
+                immediat: number;
+                urgent: number;
+                total: number;
+            };
+        };
+        actions_requises: {
+            id: any;
+            code: any;
+            designation: any;
+            famille: any;
+            stock_actuel: number;
+            stock_minimum: number;
+            stock_securite: number;
+            point_commande: number;
+            eoq: number;
+            conso_journaliere: number;
+            jours_avant_rop: number;
+            urgence: "IMMEDIAT" | "URGENT" | "PLANIFIE" | "OK";
+            action: string;
+            quantite_recommandee: number;
+            cout_estime: number;
+            pmp: number;
+            rotation: number;
+        }[];
+        tous_articles: {
+            id: any;
+            code: any;
+            designation: any;
+            famille: any;
+            stock_actuel: number;
+            stock_minimum: number;
+            stock_securite: number;
+            point_commande: number;
+            eoq: number;
+            conso_journaliere: number;
+            jours_avant_rop: number;
+            urgence: "IMMEDIAT" | "URGENT" | "PLANIFIE" | "OK";
+            action: string;
+            quantite_recommandee: number;
+            cout_estime: number;
+            pmp: number;
+            rotation: number;
+        }[];
+    }>;
 }

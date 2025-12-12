@@ -86,4 +86,20 @@ export class StockController {
   async getStockHealthScore(@Query() filter: PeriodeFilterDto) {
     return this.stockService.getStockHealthScore(filter);
   }
+
+  // ==================== ANALYSE ABC/XYZ ====================
+
+  @Get('abc-xyz')
+  @ApiOperation({ summary: 'Analyse ABC/XYZ des stocks (classification inventaire BTP)' })
+  @ApiResponse({ status: 200, description: 'Matrice ABC/XYZ avec recommandations' })
+  async getAbcXyzAnalysis(@Query() filter: PeriodeFilterDto) {
+    return this.stockService.getAbcXyzAnalysis(filter);
+  }
+
+  @Get('reorder')
+  @ApiOperation({ summary: 'Recommandations de réapprovisionnement (ROP, EOQ)' })
+  @ApiResponse({ status: 200, description: 'Actions de réapprovisionnement par urgence' })
+  async getReorderRecommendations(@Query() filter: PeriodeFilterDto) {
+    return this.stockService.getReorderRecommendations(filter);
+  }
 }
