@@ -181,10 +181,10 @@ WHERE s.is_current = true
 -- 7. METTRE A JOUR agg_ca_periode AVEC HISTORIQUE
 -- =====================================================
 
--- Ajouter des periodes historiques
+-- Ajouter des periodes historiques (ca_net est genere automatiquement)
 INSERT INTO gold.agg_ca_periode (
     societe_sk, annee, mois, trimestre, niveau_agregation, date_debut, date_fin,
-    ca_devis, ca_commande, ca_facture, ca_avoir, ca_net,
+    ca_devis, ca_commande, ca_facture, ca_avoir,
     nb_devis, nb_commandes, nb_factures, nb_avoirs,
     nb_clients_actifs, nb_affaires_actives, panier_moyen, taux_transformation
 )
@@ -196,7 +196,6 @@ SELECT
     150000 + (RANDOM() * 600000) AS ca_commande,
     400000 + (RANDOM() * 1600000) AS ca_facture,
     10000 + (RANDOM() * 40000) AS ca_avoir,
-    390000 + (RANDOM() * 1560000) AS ca_net,
     10 + (RANDOM() * 20)::int AS nb_devis,
     8 + (RANDOM() * 15)::int AS nb_commandes,
     12 + (RANDOM() * 25)::int AS nb_factures,
