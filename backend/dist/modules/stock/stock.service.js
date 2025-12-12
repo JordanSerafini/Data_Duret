@@ -233,6 +233,144 @@ let StockService = class StockService {
         const results = await queryBuilder.getRawMany();
         return results.map((r) => r.famille);
     }
+    async getStockPrevisions(filter) {
+        const queryBuilder = this.stockRepository
+            .createQueryBuilder('s')
+            .leftJoin(entities_1.DimElement, 'e', 's.element_sk = e.element_sk AND e.is_current = true')
+            .select([
+            'e.element_sk AS id',
+            'e.code AS code',
+            'e.designation AS designation',
+            'e.famille AS famille',
+            's.stock_final AS stock_final',
+            's.stock_minimum AS stock_minimum',
+            's.conso_moyenne_mensuelle AS conso_moyenne',
+            's.conso_dernier_mois AS conso_dernier_mois',
+            's.valeur_stock AS valeur_stock',
+            's.couverture_jours AS couverture_jours',
+            `CASE
+          WHEN s.conso_moyenne_mensuelle > 0 THEN
+            ROUND(((s.stock_final - s.stock_minimum) / (s.conso_moyenne_mensuelle / 30))::numeric, 0)
+          ELSE NULL
+        END AS jours_avant_mini`,
+            `CASE
+          WHEN s.conso_moyenne_mensuelle > 0 AND s.conso_dernier_mois IS NOT NULL THEN
+            ROUND(((s.conso_dernier_mois - s.conso_moyenne_mensuelle) / s.conso_moyenne_mensuelle * 100)::numeric, 1)
+          ELSE 0
+        END AS tendance_conso_pct`,
+            `CASE
+          WHEN s.stock_final <= s.stock_minimum THEN 'RUPTURE'
+          WHEN s.conso_moyenne_mensuelle > 0 AND ((s.stock_final - s.stock_minimum) / (s.conso_moyenne_mensuelle / 30)) <= 7 THEN 'CRITIQUE'
+          WHEN s.conso_moyenne_mensuelle > 0 AND ((s.stock_final - s.stock_minimum) / (s.conso_moyenne_mensuelle / 30)) <= 15 THEN 'ATTENTION'
+          WHEN s.conso_moyenne_mensuelle > 0 AND ((s.stock_final - s.stock_minimum) / (s.conso_moyenne_mensuelle / 30)) <= 30 THEN 'SURVEILLANCE'
+          ELSE 'OK'
+        END AS niveau_alerte`,
+            `CASE
+          WHEN s.stock_final <= s.stock_minimum THEN 100
+          WHEN s.conso_moyenne_mensuelle > 0 THEN
+            GREATEST(0, LEAST(100,
+              100 - ((s.stock_final - s.stock_minimum) / (s.conso_moyenne_mensuelle / 30))::numeric
+            ))::integer
+          ELSE 0
+        END AS score_criticite`,
+        ])
+            .where('s.date_calcul = (SELECT MAX(date_calcul) FROM gold.agg_stock_element)')
+            .andWhere('s.conso_moyenne_mensuelle > 0');
+        if (filter.societeId) {
+            queryBuilder.andWhere('s.societe_sk = :societeId', { societeId: filter.societeId });
+        }
+        queryBuilder.andWhere(`(
+      s.stock_final <= s.stock_minimum
+      OR (s.conso_moyenne_mensuelle > 0 AND ((s.stock_final - s.stock_minimum) / (s.conso_moyenne_mensuelle / 30)) <= 30)
+    )`);
+        queryBuilder.orderBy('score_criticite', 'DESC');
+        const data = await queryBuilder.getRawMany();
+        const parNiveau = {
+            rupture: data.filter((d) => d.niveau_alerte === 'RUPTURE'),
+            critique: data.filter((d) => d.niveau_alerte === 'CRITIQUE'),
+            attention: data.filter((d) => d.niveau_alerte === 'ATTENTION'),
+            surveillance: data.filter((d) => d.niveau_alerte === 'SURVEILLANCE'),
+        };
+        return {
+            alertes: data,
+            synthese: {
+                nb_rupture: parNiveau.rupture.length,
+                nb_critique: parNiveau.critique.length,
+                nb_attention: parNiveau.attention.length,
+                nb_surveillance: parNiveau.surveillance.length,
+                valeur_a_risque: data.reduce((sum, d) => sum + (parseFloat(d.valeur_stock) || 0), 0),
+            },
+            par_niveau: parNiveau,
+        };
+    }
+    async getStockHealthScore(filter) {
+        const queryBuilder = this.stockRepository
+            .createQueryBuilder('s')
+            .select([
+            'COUNT(*) AS nb_total',
+            'SUM(s.valeur_stock) AS valeur_totale',
+            'SUM(CASE WHEN s.est_sous_stock_mini THEN 1 ELSE 0 END) AS nb_ruptures',
+            'SUM(CASE WHEN s.est_sous_stock_mini THEN s.valeur_stock ELSE 0 END) AS valeur_ruptures',
+            'SUM(CASE WHEN s.est_surstock THEN 1 ELSE 0 END) AS nb_surstocks',
+            'SUM(CASE WHEN s.est_surstock THEN s.valeur_stock ELSE 0 END) AS valeur_surstocks',
+            `SUM(CASE WHEN s.conso_moyenne_mensuelle > 0
+          AND ((s.stock_final - s.stock_minimum) / (s.conso_moyenne_mensuelle / 30)) <= 15
+          THEN 1 ELSE 0 END) AS nb_risque_15j`,
+            'AVG(s.rotation_stock) AS rotation_moyenne',
+            'AVG(s.couverture_jours) FILTER (WHERE s.conso_moyenne_mensuelle > 0) AS couverture_moyenne',
+        ])
+            .where('s.date_calcul = (SELECT MAX(date_calcul) FROM gold.agg_stock_element)');
+        if (filter.societeId) {
+            queryBuilder.andWhere('s.societe_sk = :societeId', { societeId: filter.societeId });
+        }
+        const stats = await queryBuilder.getRawOne();
+        const nbTotal = parseInt(stats.nb_total) || 1;
+        const nbRuptures = parseInt(stats.nb_ruptures) || 0;
+        const nbSurstocks = parseInt(stats.nb_surstocks) || 0;
+        const nbRisque15j = parseInt(stats.nb_risque_15j) || 0;
+        const valeurTotale = parseFloat(stats.valeur_totale) || 1;
+        const valeurRuptures = parseFloat(stats.valeur_ruptures) || 0;
+        const valeurSurstocks = parseFloat(stats.valeur_surstocks) || 0;
+        const tauxRupture = (nbRuptures / nbTotal) * 100;
+        const tauxSurstock = (nbSurstocks / nbTotal) * 100;
+        const tauxRisque = (nbRisque15j / nbTotal) * 100;
+        const tauxValeurRisque = ((valeurRuptures + valeurSurstocks) / valeurTotale) * 100;
+        const score = Math.max(0, Math.min(100, Math.round(100
+            - (tauxRupture * 3)
+            - (tauxRisque * 1.5)
+            - (tauxSurstock * 0.5)
+            - (tauxValeurRisque * 0.3))));
+        let status;
+        if (score >= 80)
+            status = 'EXCELLENT';
+        else if (score >= 60)
+            status = 'BON';
+        else if (score >= 40)
+            status = 'ATTENTION';
+        else
+            status = 'CRITIQUE';
+        return {
+            score,
+            status,
+            details: {
+                nb_total: nbTotal,
+                nb_ruptures: nbRuptures,
+                nb_surstocks: nbSurstocks,
+                nb_risque_15j: nbRisque15j,
+                valeur_totale: valeurTotale,
+                valeur_ruptures: valeurRuptures,
+                valeur_surstocks: valeurSurstocks,
+                rotation_moyenne: parseFloat(stats.rotation_moyenne) || 0,
+                couverture_moyenne: parseFloat(stats.couverture_moyenne) || 0,
+            },
+            indicateurs: {
+                taux_rupture: Math.round(tauxRupture * 10) / 10,
+                taux_surstock: Math.round(tauxSurstock * 10) / 10,
+                taux_risque_15j: Math.round(tauxRisque * 10) / 10,
+                taux_valeur_risque: Math.round(tauxValeurRisque * 10) / 10,
+            },
+        };
+    }
 };
 exports.StockService = StockService;
 exports.StockService = StockService = __decorate([

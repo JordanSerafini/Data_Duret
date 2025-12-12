@@ -215,4 +215,232 @@ export class TresorerieService {
 
     return queryBuilder.getRawMany();
   }
+
+  // ==================== SCORE DE TENSION ====================
+
+  async getTensionScore(filter: PeriodeFilterDto) {
+    // Récupérer les données les plus récentes
+    const queryBuilder = this.tresorerieRepository
+      .createQueryBuilder('t')
+      .select([
+        't.solde_total',
+        't.flux_net',
+        't.encaissements',
+        't.decaissements',
+        't.creances_echues',
+        't.dettes_echues',
+        't.bfr_estime',
+        't.annee',
+        't.mois',
+      ])
+      .where('t.niveau_agregation = :niveau', { niveau: 'MOIS' });
+
+    if (filter.societeId) {
+      queryBuilder.andWhere('t.societe_sk = :societeId', { societeId: filter.societeId });
+    }
+
+    queryBuilder.orderBy('t.annee', 'DESC').addOrderBy('t.mois', 'DESC').limit(6);
+
+    const data = await queryBuilder.getRawMany();
+
+    if (data.length === 0) {
+      return {
+        score: 50,
+        status: 'INSUFFISANT',
+        message: 'Données insuffisantes pour calculer le score',
+      };
+    }
+
+    const latest = data[0];
+    const soldeTotal = parseFloat(latest.solde_total) || 0;
+    const fluxNet = parseFloat(latest.flux_net) || 0;
+    const encaissements = parseFloat(latest.encaissements) || 1;
+    const decaissements = Math.abs(parseFloat(latest.decaissements)) || 1;
+    const creancesEchues = parseFloat(latest.creances_echues) || 0;
+    const dettesEchues = parseFloat(latest.dettes_echues) || 0;
+
+    // Calcul des ratios
+    // 1. Ratio de liquidité : solde / (créances échues + dettes échues)
+    const ratioLiquidite = (creancesEchues + dettesEchues) > 0
+      ? soldeTotal / (creancesEchues + dettesEchues)
+      : 10; // Très bon si pas de dettes/créances échues
+
+    // 2. Ratio de couverture : solde / décaissements mensuels (nb mois de trésorerie)
+    const ratioCouverture = decaissements > 0 ? soldeTotal / decaissements : 10;
+
+    // 3. Ratio flux : flux net / décaissements (capacité de régénération)
+    const ratioFlux = decaissements > 0 ? fluxNet / decaissements : 0;
+
+    // 4. Tendance : évolution flux net sur 3 derniers mois
+    let tendanceScore = 50;
+    if (data.length >= 3) {
+      const flux3mois = data.slice(0, 3).map((d) => parseFloat(d.flux_net) || 0);
+      const tendance = flux3mois[0] - flux3mois[2]; // Différence entre le plus récent et il y a 3 mois
+      if (tendance > 0) tendanceScore = 70 + Math.min(30, (tendance / Math.abs(flux3mois[2] || 1)) * 30);
+      else tendanceScore = 50 - Math.min(50, Math.abs(tendance / (flux3mois[2] || 1)) * 50);
+    }
+
+    // Calcul du score composite (0-100)
+    // Pondération : liquidité 30%, couverture 25%, flux 25%, tendance 20%
+    const scoreLiquidite = Math.min(100, Math.max(0, ratioLiquidite * 10));
+    const scoreCouverture = Math.min(100, Math.max(0, ratioCouverture * 10));
+    const scoreFlux = Math.min(100, Math.max(0, (ratioFlux + 1) * 50)); // Centré sur 0
+
+    const score = Math.round(
+      scoreLiquidite * 0.30 +
+      scoreCouverture * 0.25 +
+      scoreFlux * 0.25 +
+      tendanceScore * 0.20
+    );
+
+    // Classification
+    let status: string;
+    let couleur: string;
+    if (score >= 70) {
+      status = 'CONFORTABLE';
+      couleur = '#10B981';
+    } else if (score >= 50) {
+      status = 'NORMAL';
+      couleur = '#3B82F6';
+    } else if (score >= 30) {
+      status = 'TENDU';
+      couleur = '#F59E0B';
+    } else {
+      status = 'CRITIQUE';
+      couleur = '#EF4444';
+    }
+
+    // Alertes spécifiques
+    const alertes: string[] = [];
+    if (ratioLiquidite < 2) alertes.push('Liquidité faible par rapport aux échéances');
+    if (ratioCouverture < 2) alertes.push('Couverture décaissements < 2 mois');
+    if (fluxNet < 0) alertes.push('Flux net négatif ce mois');
+    if (creancesEchues > soldeTotal * 0.2) alertes.push('Créances échues importantes (>20% du solde)');
+
+    return {
+      score,
+      status,
+      couleur,
+      alertes,
+      details: {
+        solde_total: soldeTotal,
+        flux_net: fluxNet,
+        encaissements,
+        decaissements,
+        creances_echues: creancesEchues,
+        dettes_echues: dettesEchues,
+      },
+      ratios: {
+        liquidite: Math.round(ratioLiquidite * 100) / 100,
+        couverture_mois: Math.round(ratioCouverture * 10) / 10,
+        flux_decaissements: Math.round(ratioFlux * 100) / 100,
+      },
+      scores_details: {
+        liquidite: Math.round(scoreLiquidite),
+        couverture: Math.round(scoreCouverture),
+        flux: Math.round(scoreFlux),
+        tendance: Math.round(tendanceScore),
+      },
+      periode: {
+        annee: latest.annee,
+        mois: latest.mois,
+      },
+    };
+  }
+
+  // ==================== PRÉVISION TRÉSORERIE ====================
+
+  async getTresorerieForecast(filter: PeriodeFilterDto) {
+    // Récupérer l'historique
+    const queryBuilder = this.tresorerieRepository
+      .createQueryBuilder('t')
+      .select([
+        't.annee AS annee',
+        't.mois AS mois',
+        'SUM(t.solde_total) AS solde_total',
+        'SUM(t.flux_net) AS flux_net',
+        'SUM(t.encaissements) AS encaissements',
+        'SUM(t.decaissements) AS decaissements',
+      ])
+      .where('t.niveau_agregation = :niveau', { niveau: 'MOIS' })
+      .groupBy('t.annee')
+      .addGroupBy('t.mois');
+
+    if (filter.societeId) {
+      queryBuilder.andWhere('t.societe_sk = :societeId', { societeId: filter.societeId });
+    }
+
+    queryBuilder.orderBy('t.annee', 'ASC').addOrderBy('t.mois', 'ASC');
+
+    const evolution = await queryBuilder.getRawMany();
+
+    if (evolution.length < 3) {
+      return { historical: evolution, forecast: [], trend: 'INSUFFISANT' };
+    }
+
+    // Préparer données pour régression
+    const fluxValues = evolution.map((e) => parseFloat(e.flux_net) || 0);
+    const soldeValues = evolution.map((e) => parseFloat(e.solde_total) || 0);
+    const n = fluxValues.length;
+
+    // Régression linéaire sur flux_net
+    const xMean = (n - 1) / 2;
+    const yMeanFlux = fluxValues.reduce((a, b) => a + b, 0) / n;
+
+    let numerator = 0;
+    let denominator = 0;
+    for (let i = 0; i < n; i++) {
+      numerator += (i - xMean) * (fluxValues[i] - yMeanFlux);
+      denominator += (i - xMean) * (i - xMean);
+    }
+
+    const slopeFlux = denominator !== 0 ? numerator / denominator : 0;
+    const interceptFlux = yMeanFlux - slopeFlux * xMean;
+
+    // Prévision 3 mois
+    const lastEntry = evolution[evolution.length - 1];
+    const lastSolde = parseFloat(lastEntry.solde_total) || 0;
+    let currentYear = parseInt(lastEntry.annee);
+    let currentMonth = parseInt(lastEntry.mois);
+
+    const forecast = [];
+    let cumulSolde = lastSolde;
+
+    for (let i = 1; i <= 3; i++) {
+      currentMonth++;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
+
+      const predictedFlux = interceptFlux + slopeFlux * (n - 1 + i);
+      cumulSolde += predictedFlux;
+
+      // Intervalle de confiance (±15%)
+      forecast.push({
+        annee: currentYear,
+        mois: currentMonth,
+        flux_prevu: Math.round(predictedFlux),
+        solde_prevu: Math.round(cumulSolde),
+        confidence_low: Math.round(cumulSolde * 0.85),
+        confidence_high: Math.round(cumulSolde * 1.15),
+      });
+    }
+
+    // Tendance
+    const trend = slopeFlux > yMeanFlux * 0.02 ? 'HAUSSE' : slopeFlux < -yMeanFlux * 0.02 ? 'BAISSE' : 'STABLE';
+
+    // Variation prévue
+    const forecastLastSolde = forecast[forecast.length - 1].solde_prevu;
+    const variationPct = lastSolde > 0 ? ((forecastLastSolde - lastSolde) / lastSolde) * 100 : 0;
+
+    return {
+      historical: evolution.slice(-6),
+      forecast,
+      trend,
+      slope_flux: Math.round(slopeFlux),
+      variation_pct: Math.round(variationPct * 10) / 10,
+      solde_prevu_3m: forecastLastSolde,
+    };
+  }
 }

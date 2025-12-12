@@ -70,4 +70,20 @@ export class StockController {
   async getValeurParFamille(@Query() filter: PeriodeFilterDto) {
     return this.stockService.getValeurParFamille(filter);
   }
+
+  // ==================== PRÉVISIONS & SCORE ====================
+
+  @Get('previsions')
+  @ApiOperation({ summary: 'Alertes anticipées de rupture stock (J-7, J-15, J-30)' })
+  @ApiResponse({ status: 200, description: 'Liste des articles à risque avec prévision de rupture' })
+  async getStockPrevisions(@Query() filter: PeriodeFilterDto) {
+    return this.stockService.getStockPrevisions(filter);
+  }
+
+  @Get('health-score')
+  @ApiOperation({ summary: 'Score de santé global des stocks' })
+  @ApiResponse({ status: 200, description: 'Score composite avec détails et indicateurs' })
+  async getStockHealthScore(@Query() filter: PeriodeFilterDto) {
+    return this.stockService.getStockHealthScore(filter);
+  }
 }

@@ -46,6 +46,12 @@ let StockController = class StockController {
     async getValeurParFamille(filter) {
         return this.stockService.getValeurParFamille(filter);
     }
+    async getStockPrevisions(filter) {
+        return this.stockService.getStockPrevisions(filter);
+    }
+    async getStockHealthScore(filter) {
+        return this.stockService.getStockHealthScore(filter);
+    }
 };
 exports.StockController = StockController;
 __decorate([
@@ -123,6 +129,24 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
     __metadata("design:returntype", Promise)
 ], StockController.prototype, "getValeurParFamille", null);
+__decorate([
+    (0, common_1.Get)('previsions'),
+    (0, swagger_1.ApiOperation)({ summary: 'Alertes anticipées de rupture stock (J-7, J-15, J-30)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Liste des articles à risque avec prévision de rupture' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], StockController.prototype, "getStockPrevisions", null);
+__decorate([
+    (0, common_1.Get)('health-score'),
+    (0, swagger_1.ApiOperation)({ summary: 'Score de santé global des stocks' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Score composite avec détails et indicateurs' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], StockController.prototype, "getStockHealthScore", null);
 exports.StockController = StockController = __decorate([
     (0, swagger_1.ApiTags)('stock'),
     (0, common_1.Controller)('stock'),
