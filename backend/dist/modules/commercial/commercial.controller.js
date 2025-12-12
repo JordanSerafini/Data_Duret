@@ -39,6 +39,9 @@ let CommercialController = class CommercialController {
     async getTopClients(filter, limit) {
         return this.commercialService.getTopClients(filter, limit || 10);
     }
+    async getClientSatisfactionScore(filter) {
+        return this.commercialService.getClientSatisfactionScore(filter);
+    }
     async getClientById(id, filter) {
         return this.commercialService.getClientById(id, filter);
     }
@@ -50,6 +53,12 @@ let CommercialController = class CommercialController {
     }
     async getAffairesEnDepassement(filter) {
         return this.commercialService.getAffairesEnDepassement(filter);
+    }
+    async getSpiCpiAnalysis(filter) {
+        return this.commercialService.getSpiCpiAnalysis(filter);
+    }
+    async getEarlyWarningAffaires(filter) {
+        return this.commercialService.getEarlyWarningAffaires(filter);
     }
     async getAffaireById(id) {
         return this.commercialService.getAffaireById(id);
@@ -116,6 +125,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CommercialController.prototype, "getTopClients", null);
 __decorate([
+    (0, common_1.Get)('clients/satisfaction'),
+    (0, swagger_1.ApiOperation)({ summary: 'Score de satisfaction client' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Score satisfaction avec analyse risque churn' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], CommercialController.prototype, "getClientSatisfactionScore", null);
+__decorate([
     (0, common_1.Get)('clients/:id'),
     (0, swagger_1.ApiOperation)({ summary: 'Détail d\'un client' }),
     (0, swagger_1.ApiParam)({ name: 'id', type: Number }),
@@ -157,6 +175,24 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
     __metadata("design:returntype", Promise)
 ], CommercialController.prototype, "getAffairesEnDepassement", null);
+__decorate([
+    (0, common_1.Get)('affaires/spi-cpi'),
+    (0, swagger_1.ApiOperation)({ summary: 'Analyse SPI/CPI des affaires (indices performance BTP)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'SPI (Schedule Performance Index) et CPI (Cost Performance Index)' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], CommercialController.prototype, "getSpiCpiAnalysis", null);
+__decorate([
+    (0, common_1.Get)('affaires/early-warning'),
+    (0, swagger_1.ApiOperation)({ summary: 'Système d\'alertes précoces des affaires' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Alertes prédictives par affaire avec score de risque' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], CommercialController.prototype, "getEarlyWarningAffaires", null);
 __decorate([
     (0, common_1.Get)('affaires/:id'),
     (0, swagger_1.ApiOperation)({ summary: 'Détail d\'une affaire' }),

@@ -63,6 +63,13 @@ export class CommercialController {
     return this.commercialService.getTopClients(filter, limit || 10);
   }
 
+  @Get('clients/satisfaction')
+  @ApiOperation({ summary: 'Score de satisfaction client' })
+  @ApiResponse({ status: 200, description: 'Score satisfaction avec analyse risque churn' })
+  async getClientSatisfactionScore(@Query() filter: PeriodeFilterDto) {
+    return this.commercialService.getClientSatisfactionScore(filter);
+  }
+
   @Get('clients/:id')
   @ApiOperation({ summary: 'Détail d\'un client' })
   @ApiParam({ name: 'id', type: Number })
@@ -100,6 +107,20 @@ export class CommercialController {
   @ApiResponse({ status: 200, description: 'Liste des affaires en dépassement' })
   async getAffairesEnDepassement(@Query() filter: PeriodeFilterDto) {
     return this.commercialService.getAffairesEnDepassement(filter);
+  }
+
+  @Get('affaires/spi-cpi')
+  @ApiOperation({ summary: 'Analyse SPI/CPI des affaires (indices performance BTP)' })
+  @ApiResponse({ status: 200, description: 'SPI (Schedule Performance Index) et CPI (Cost Performance Index)' })
+  async getSpiCpiAnalysis(@Query() filter: PeriodeFilterDto) {
+    return this.commercialService.getSpiCpiAnalysis(filter);
+  }
+
+  @Get('affaires/early-warning')
+  @ApiOperation({ summary: 'Système d\'alertes précoces des affaires' })
+  @ApiResponse({ status: 200, description: 'Alertes prédictives par affaire avec score de risque' })
+  async getEarlyWarningAffaires(@Query() filter: PeriodeFilterDto) {
+    return this.commercialService.getEarlyWarningAffaires(filter);
   }
 
   @Get('affaires/:id')
