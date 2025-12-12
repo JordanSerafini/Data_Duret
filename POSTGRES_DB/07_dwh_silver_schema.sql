@@ -3,7 +3,7 @@
 -- Donnees nettoyees, conformees et historisees (SCD Type 2)
 -- ============================================================================
 
-\c dwh_groupe_duret;
+-- \c dwh_groupe_duret;
 
 -- ============================================================================
 -- SILVER : DIMENSIONS CONFORMEES

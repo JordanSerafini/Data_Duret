@@ -3,7 +3,7 @@
 -- Chargement des donnees depuis les bases sources (SAGE + MDE)
 -- ============================================================================
 
-\c dwh_groupe_duret;
+-- \c dwh_groupe_duret;
 
 -- ============================================================================
 -- 1. EXTRACTION BRONZE DEPUIS SAGE_COMPTA

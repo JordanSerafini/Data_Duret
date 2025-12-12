@@ -3,7 +3,7 @@
 -- Agregation et calcul des KPIs metier
 -- ============================================================================
 
-\c dwh_groupe_duret;
+-- \c dwh_groupe_duret;
 
 -- ============================================================================
 -- 1. AGREGATION CA PAR PERIODE

@@ -3,7 +3,7 @@
 -- Transformation et chargement des donnees brutes vers les dimensions/faits
 -- ============================================================================
 
-\c dwh_groupe_duret;
+-- \c dwh_groupe_duret;
 
 -- ============================================================================
 -- 1. PROCEDURES D'EXTRACTION BRONZE (depuis sources)

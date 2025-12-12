@@ -3,7 +3,7 @@
 -- Donnees metier agregees, KPIs, et modeles analytiques
 -- ============================================================================
 
-\c dwh_groupe_duret;
+-- \c dwh_groupe_duret;
 
 -- ============================================================================
 -- GOLD : TABLES AGREGEES PAR DOMAINE METIER

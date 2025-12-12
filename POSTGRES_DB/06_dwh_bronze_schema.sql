@@ -4,14 +4,14 @@
 -- ============================================================================
 
 -- Creation de la base de donnees
-DROP DATABASE IF EXISTS dwh_groupe_duret;
-CREATE DATABASE dwh_groupe_duret
-    WITH ENCODING = 'UTF8'
-    LC_COLLATE = 'fr_FR.utf8'
-    LC_CTYPE = 'fr_FR.utf8'
-    TEMPLATE = template0;
+-- DROP DATABASE IF EXISTS dwh_groupe_duret;
+-- CREATE DATABASE dwh_groupe_duret
+--     WITH ENCODING = 'UTF8'
+--     LC_COLLATE = 'fr_FR.utf8'
+--     LC_CTYPE = 'fr_FR.utf8'
+--     TEMPLATE = template0;
 
-\c dwh_groupe_duret;
+-- \c dwh_groupe_duret;
 
 -- ============================================================================
 -- SCHEMA BRONZE - Donnees brutes avec metadonnees d'ingestion
