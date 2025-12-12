@@ -59,11 +59,11 @@ FROM (
 -- Supprimer les donnees existantes pour regenerer proprement
 DELETE FROM gold.agg_tresorerie;
 
--- Generer pour toutes les societes sur 12 mois (solde_total est genere)
+-- Generer pour toutes les societes sur 12 mois (solde_total et flux_net sont generes)
 INSERT INTO gold.agg_tresorerie (
     societe_sk, annee, mois, jour, niveau_agregation,
     solde_banque, solde_caisse,
-    encaissements, decaissements, flux_net,
+    encaissements, decaissements,
     creances_clients, creances_echues,
     dettes_fournisseurs, dettes_echues,
     bfr_estime
@@ -74,13 +74,12 @@ SELECT
     m AS mois,
     1 AS jour,
     'MENSUEL',
-    -- Soldes (solde_total est genere automatiquement)
+    -- Soldes (solde_total genere auto = solde_banque + solde_caisse)
     1000000 + (RANDOM() * 4000000) AS solde_banque,
     50000 + (RANDOM() * 150000) AS solde_caisse,
-    -- Flux
+    -- Flux (flux_net genere auto = encaissements - decaissements)
     500000 + (RANDOM() * 2000000) AS encaissements,
     400000 + (RANDOM() * 1600000) AS decaissements,
-    100000 + (RANDOM() * 400000) AS flux_net,
     -- Creances
     200000 + (RANDOM() * 800000) AS creances_clients,
     50000 + (RANDOM() * 200000) AS creances_echues,
@@ -102,60 +101,35 @@ WHERE s.is_current = true
 -- Supprimer et regenerer
 DELETE FROM gold.agg_ca_client;
 
--- Inserer pour tous les clients actifs
+-- Inserer pour tous les clients actifs (colonnes reelles de la table)
 INSERT INTO gold.agg_ca_client (
     societe_sk, client_sk, annee,
-    ca_devis, ca_commande, ca_facture, ca_avoir, ca_net,
-    nb_devis, nb_commandes, nb_factures, nb_avoirs,
-    panier_moyen, delai_paiement_moyen, taux_transformation
+    ca_cumule, ca_n_moins_1, variation_ca_pct,
+    nb_affaires, nb_factures, nb_avoirs,
+    marge_brute, taux_marge,
+    encours_actuel, retard_paiement_moyen_jours, nb_impayes,
+    segment_ca, score_fidelite, potentiel_croissance
 )
 SELECT
-    c.societe_sk,
+    COALESCE(c.societe_sk, 1),
     c.client_sk,
     2025 AS annee,
-    (5000 + RANDOM() * 50000)::numeric(15,2) AS ca_devis,
-    (3000 + RANDOM() * 40000)::numeric(15,2) AS ca_commande,
-    (4000 + RANDOM() * 45000)::numeric(15,2) AS ca_facture,
-    (100 + RANDOM() * 2000)::numeric(15,2) AS ca_avoir,
-    (3900 + RANDOM() * 43000)::numeric(15,2) AS ca_net,
-    (1 + RANDOM() * 5)::int AS nb_devis,
-    (1 + RANDOM() * 4)::int AS nb_commandes,
-    (1 + RANDOM() * 6)::int AS nb_factures,
+    (10000 + RANDOM() * 100000)::numeric(15,2) AS ca_cumule,
+    (8000 + RANDOM() * 90000)::numeric(15,2) AS ca_n_moins_1,
+    (-20 + RANDOM() * 50)::numeric(6,2) AS variation_ca_pct,
+    (1 + RANDOM() * 5)::int AS nb_affaires,
+    (2 + RANDOM() * 10)::int AS nb_factures,
     (RANDOM() * 2)::int AS nb_avoirs,
-    (2000 + RANDOM() * 15000)::numeric(15,2) AS panier_moyen,
-    (25 + RANDOM() * 35)::int AS delai_paiement_moyen,
-    (40 + RANDOM() * 50)::numeric(5,2) AS taux_transformation
+    (2000 + RANDOM() * 25000)::numeric(15,2) AS marge_brute,
+    (10 + RANDOM() * 20)::numeric(5,2) AS taux_marge,
+    (1000 + RANDOM() * 20000)::numeric(15,2) AS encours_actuel,
+    (25 + RANDOM() * 35)::int AS retard_paiement_moyen_jours,
+    (RANDOM() * 3)::int AS nb_impayes,
+    (ARRAY['GRAND', 'MOYEN', 'PETIT'])[1 + (RANDOM() * 2)::int] AS segment_ca,
+    (50 + RANDOM() * 50)::int AS score_fidelite,
+    (ARRAY['FORT', 'MOYEN', 'FAIBLE'])[1 + (RANDOM() * 2)::int] AS potentiel_croissance
 FROM silver.dim_client c
-WHERE c.is_current = true
-  AND c.societe_sk IS NOT NULL;
-
--- Pour les clients sans societe, assigner a societe 1
-INSERT INTO gold.agg_ca_client (
-    societe_sk, client_sk, annee,
-    ca_devis, ca_commande, ca_facture, ca_avoir, ca_net,
-    nb_devis, nb_commandes, nb_factures, nb_avoirs,
-    panier_moyen, delai_paiement_moyen, taux_transformation
-)
-SELECT
-    1 AS societe_sk,
-    c.client_sk,
-    2025 AS annee,
-    (5000 + RANDOM() * 50000)::numeric(15,2) AS ca_devis,
-    (3000 + RANDOM() * 40000)::numeric(15,2) AS ca_commande,
-    (4000 + RANDOM() * 45000)::numeric(15,2) AS ca_facture,
-    (100 + RANDOM() * 2000)::numeric(15,2) AS ca_avoir,
-    (3900 + RANDOM() * 43000)::numeric(15,2) AS ca_net,
-    (1 + RANDOM() * 5)::int AS nb_devis,
-    (1 + RANDOM() * 4)::int AS nb_commandes,
-    (1 + RANDOM() * 6)::int AS nb_factures,
-    (RANDOM() * 2)::int AS nb_avoirs,
-    (2000 + RANDOM() * 15000)::numeric(15,2) AS panier_moyen,
-    (25 + RANDOM() * 35)::int AS delai_paiement_moyen,
-    (40 + RANDOM() * 50)::numeric(5,2) AS taux_transformation
-FROM silver.dim_client c
-WHERE c.is_current = true
-  AND c.societe_sk IS NULL
-  AND NOT EXISTS (SELECT 1 FROM gold.agg_ca_client a WHERE a.client_sk = c.client_sk);
+WHERE c.is_current = true;
 
 -- =====================================================
 -- 4. COMPLETER agg_ca_affaire POUR TOUTES LES SOCIETES
@@ -163,37 +137,48 @@ WHERE c.is_current = true
 
 DELETE FROM gold.agg_ca_affaire;
 
+-- Colonnes reelles de la table (montant_reste_a_facturer, ecart_marge, ecart_heures sont generes)
 INSERT INTO gold.agg_ca_affaire (
-    societe_sk, affaire_sk, annee,
-    budget_initial, budget_actuel,
-    ca_commande, ca_facture, ca_net,
-    cout_mo, cout_fournitures, cout_sous_traitance, cout_total,
-    marge_brute, taux_marge,
-    heures_budget, heures_consommees, pct_avancement,
-    nb_intervenants, date_debut, date_fin_prevue, statut
+    affaire_sk, societe_sk, client_sk,
+    montant_devis, montant_commande, montant_facture, montant_avoir,
+    cout_mo_prevu, cout_mo_reel,
+    cout_achats_prevu, cout_achats_reel,
+    cout_sous_traitance_prevu, cout_sous_traitance_reel,
+    cout_total_prevu, cout_total_reel,
+    marge_prevue, marge_reelle,
+    taux_marge_prevu, taux_marge_reel,
+    heures_budget, heures_realisees,
+    productivite_pct, avancement_facturation_pct, avancement_travaux_pct,
+    est_en_depassement_budget, est_en_retard, niveau_risque
 )
 SELECT
-    a.societe_sk,
     a.affaire_sk,
-    2025 AS annee,
-    (50000 + RANDOM() * 500000)::numeric(15,2) AS budget_initial,
-    (55000 + RANDOM() * 520000)::numeric(15,2) AS budget_actuel,
-    (40000 + RANDOM() * 450000)::numeric(15,2) AS ca_commande,
-    (35000 + RANDOM() * 400000)::numeric(15,2) AS ca_facture,
-    (34000 + RANDOM() * 395000)::numeric(15,2) AS ca_net,
-    (10000 + RANDOM() * 100000)::numeric(15,2) AS cout_mo,
-    (5000 + RANDOM() * 50000)::numeric(15,2) AS cout_fournitures,
-    (2000 + RANDOM() * 30000)::numeric(15,2) AS cout_sous_traitance,
-    (17000 + RANDOM() * 180000)::numeric(15,2) AS cout_total,
-    (8000 + RANDOM() * 80000)::numeric(15,2) AS marge_brute,
-    (10 + RANDOM() * 25)::numeric(5,2) AS taux_marge,
-    (100 + RANDOM() * 1000)::int AS heures_budget,
-    (80 + RANDOM() * 900)::int AS heures_consommees,
-    (30 + RANDOM() * 70)::numeric(5,2) AS pct_avancement,
-    (2 + RANDOM() * 8)::int AS nb_intervenants,
-    '2025-01-01'::date + (RANDOM() * 200)::int AS date_debut,
-    '2025-06-01'::date + (RANDOM() * 300)::int AS date_fin_prevue,
-    (ARRAY['EN_COURS', 'TERMINE', 'EN_ATTENTE'])[1 + (RANDOM() * 2)::int] AS statut
+    a.societe_sk,
+    (SELECT client_sk FROM silver.dim_client WHERE is_current = true ORDER BY RANDOM() LIMIT 1),
+    (50000 + RANDOM() * 500000)::numeric(15,2) AS montant_devis,
+    (45000 + RANDOM() * 450000)::numeric(15,2) AS montant_commande,
+    (35000 + RANDOM() * 400000)::numeric(15,2) AS montant_facture,
+    (1000 + RANDOM() * 10000)::numeric(15,2) AS montant_avoir,
+    (10000 + RANDOM() * 100000)::numeric(15,2) AS cout_mo_prevu,
+    (9000 + RANDOM() * 110000)::numeric(15,2) AS cout_mo_reel,
+    (5000 + RANDOM() * 50000)::numeric(15,2) AS cout_achats_prevu,
+    (4500 + RANDOM() * 55000)::numeric(15,2) AS cout_achats_reel,
+    (2000 + RANDOM() * 30000)::numeric(15,2) AS cout_sous_traitance_prevu,
+    (1800 + RANDOM() * 32000)::numeric(15,2) AS cout_sous_traitance_reel,
+    (17000 + RANDOM() * 180000)::numeric(15,2) AS cout_total_prevu,
+    (16000 + RANDOM() * 190000)::numeric(15,2) AS cout_total_reel,
+    (8000 + RANDOM() * 80000)::numeric(15,2) AS marge_prevue,
+    (7000 + RANDOM() * 85000)::numeric(15,2) AS marge_reelle,
+    (15 + RANDOM() * 20)::numeric(10,2) AS taux_marge_prevu,
+    (12 + RANDOM() * 22)::numeric(10,2) AS taux_marge_reel,
+    (100 + RANDOM() * 1000)::numeric(10,2) AS heures_budget,
+    (90 + RANDOM() * 1100)::numeric(10,2) AS heures_realisees,
+    (70 + RANDOM() * 30)::numeric(10,2) AS productivite_pct,
+    (50 + RANDOM() * 50)::numeric(10,2) AS avancement_facturation_pct,
+    (40 + RANDOM() * 60)::numeric(10,2) AS avancement_travaux_pct,
+    RANDOM() < 0.2 AS est_en_depassement_budget,
+    RANDOM() < 0.15 AS est_en_retard,
+    (ARRAY['FAIBLE', 'MOYEN', 'ELEVE', 'CRITIQUE'])[1 + (RANDOM() * 3)::int] AS niveau_risque
 FROM silver.dim_affaire a
 WHERE a.is_current = true;
 
