@@ -623,7 +623,7 @@ SELECT
     0, 0, 10,
     'BC-' || LPAD((1000 + m * 10)::TEXT, 6, '0')
 FROM generate_series(1, 10) m
-CROSS JOIN LATERAL (SELECT * FROM affaire.affaire WHERE code = 'AFF2024-001' LIMIT 1) a
+CROSS JOIN LATERAL (SELECT * FROM affaire.affaire WHERE code = 'AFF2025-001' LIMIT 1) a
 CROSS JOIN LATERAL (SELECT * FROM tiers.client WHERE id = a.client_id LIMIT 1) c
 CROSS JOIN LATERAL (SELECT * FROM chantier.chantier WHERE affaire_id = a.id ORDER BY RANDOM() LIMIT 1) ch;
 
