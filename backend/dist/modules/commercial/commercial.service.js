@@ -281,6 +281,70 @@ let CommercialService = class CommercialService {
         const results = await queryBuilder.getRawMany();
         return results.map((r) => r.segment);
     }
+    async getCaForecast(filter) {
+        const evolution = await this.caPeriodeRepository
+            .createQueryBuilder('ca')
+            .select([
+            'ca.annee AS annee',
+            'ca.mois AS mois',
+            'SUM(ca.ca_facture) AS ca_facture',
+        ])
+            .where('ca.niveau_agregation = :niveau', { niveau: 'MOIS' })
+            .groupBy('ca.annee')
+            .addGroupBy('ca.mois')
+            .orderBy('ca.annee', 'ASC')
+            .addOrderBy('ca.mois', 'ASC')
+            .getRawMany();
+        if (evolution.length < 3) {
+            return { historical: evolution, forecast: [], trend: 'INSUFFISANT' };
+        }
+        const values = evolution.map((e) => parseFloat(e.ca_facture) || 0);
+        const n = values.length;
+        const xMean = (n - 1) / 2;
+        const yMean = values.reduce((a, b) => a + b, 0) / n;
+        let numerator = 0;
+        let denominator = 0;
+        for (let i = 0; i < n; i++) {
+            numerator += (i - xMean) * (values[i] - yMean);
+            denominator += (i - xMean) * (i - xMean);
+        }
+        const slope = denominator !== 0 ? numerator / denominator : 0;
+        const intercept = yMean - slope * xMean;
+        const lastEntry = evolution[evolution.length - 1];
+        let currentYear = parseInt(lastEntry.annee);
+        let currentMonth = parseInt(lastEntry.mois);
+        const forecast = [];
+        for (let i = 1; i <= 3; i++) {
+            currentMonth++;
+            if (currentMonth > 12) {
+                currentMonth = 1;
+                currentYear++;
+            }
+            const predictedValue = Math.max(0, intercept + slope * (n - 1 + i));
+            const confidenceLow = predictedValue * 0.85;
+            const confidenceHigh = predictedValue * 1.15;
+            forecast.push({
+                annee: currentYear,
+                mois: currentMonth,
+                ca_prevu: Math.round(predictedValue),
+                confidence_low: Math.round(confidenceLow),
+                confidence_high: Math.round(confidenceHigh),
+            });
+        }
+        const trend = slope > yMean * 0.02 ? 'HAUSSE' : slope < -yMean * 0.02 ? 'BAISSE' : 'STABLE';
+        const lastCA = values[values.length - 1];
+        const forecastTotal = forecast.reduce((sum, f) => sum + f.ca_prevu, 0);
+        const historicalLast3 = values.slice(-3).reduce((a, b) => a + b, 0);
+        const variationPct = historicalLast3 > 0 ? ((forecastTotal - historicalLast3) / historicalLast3) * 100 : 0;
+        return {
+            historical: evolution.slice(-6),
+            forecast,
+            trend,
+            slope: Math.round(slope),
+            variation_pct: Math.round(variationPct * 10) / 10,
+            ca_prevu_total: forecastTotal,
+        };
+    }
 };
 exports.CommercialService = CommercialService;
 exports.CommercialService = CommercialService = __decorate([

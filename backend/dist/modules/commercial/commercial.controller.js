@@ -27,6 +27,9 @@ let CommercialController = class CommercialController {
     async getCaEvolution(filter) {
         return this.commercialService.getCaEvolution(filter);
     }
+    async getCaForecast(filter) {
+        return this.commercialService.getCaForecast(filter);
+    }
     async getSegments() {
         return this.commercialService.getSegments();
     }
@@ -71,6 +74,15 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
     __metadata("design:returntype", Promise)
 ], CommercialController.prototype, "getCaEvolution", null);
+__decorate([
+    (0, common_1.Get)('ca/forecast'),
+    (0, swagger_1.ApiOperation)({ summary: 'Prévision CA 3 mois (régression linéaire)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Prévision avec historique et tendance' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], CommercialController.prototype, "getCaForecast", null);
 __decorate([
     (0, common_1.Get)('segments'),
     (0, swagger_1.ApiOperation)({ summary: 'Liste des segments de CA' }),

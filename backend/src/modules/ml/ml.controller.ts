@@ -112,4 +112,22 @@ export class MlController {
   async getAffaireFeatures(@Param('id', ParseIntPipe) id: number) {
     return this.mlService.getAffaireFeatures(id);
   }
+
+  // ==================== HEALTH SCORE ====================
+
+  @Get('clients/health')
+  @ApiOperation({ summary: 'Clients avec score de santé' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiResponse({ status: 200, description: 'Liste des clients avec health score' })
+  async getClientsWithHealthScore(@Query() pagination: PaginationDto) {
+    return this.mlService.getClientsWithHealthScore(pagination);
+  }
+
+  @Get('clients/health/summary')
+  @ApiOperation({ summary: 'Résumé des scores de santé' })
+  @ApiResponse({ status: 200, description: 'Répartition par statut de santé' })
+  async getHealthScoreSummary() {
+    return this.mlService.getHealthScoreSummary();
+  }
 }

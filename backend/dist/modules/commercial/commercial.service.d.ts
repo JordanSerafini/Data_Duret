@@ -40,4 +40,25 @@ export declare class CommercialService {
     getAffairesEnRetard(filter: PeriodeFilterDto): Promise<any[]>;
     getAffairesEnDepassement(filter: PeriodeFilterDto): Promise<any[]>;
     getSegments(): Promise<any[]>;
+    getCaForecast(filter: PeriodeFilterDto): Promise<{
+        historical: any[];
+        forecast: never[];
+        trend: string;
+        slope?: undefined;
+        variation_pct?: undefined;
+        ca_prevu_total?: undefined;
+    } | {
+        historical: any[];
+        forecast: {
+            annee: number;
+            mois: number;
+            ca_prevu: number;
+            confidence_low: number;
+            confidence_high: number;
+        }[];
+        trend: string;
+        slope: number;
+        variation_pct: number;
+        ca_prevu_total: number;
+    }>;
 }

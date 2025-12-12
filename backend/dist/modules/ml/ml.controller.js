@@ -51,6 +51,12 @@ let MlController = class MlController {
     async getAffaireFeatures(id) {
         return this.mlService.getAffaireFeatures(id);
     }
+    async getClientsWithHealthScore(pagination) {
+        return this.mlService.getClientsWithHealthScore(pagination);
+    }
+    async getHealthScoreSummary() {
+        return this.mlService.getHealthScoreSummary();
+    }
 };
 exports.MlController = MlController;
 __decorate([
@@ -164,6 +170,25 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], MlController.prototype, "getAffaireFeatures", null);
+__decorate([
+    (0, common_1.Get)('clients/health'),
+    (0, swagger_1.ApiOperation)({ summary: 'Clients avec score de santé' }),
+    (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number }),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Liste des clients avec health score' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PaginationDto]),
+    __metadata("design:returntype", Promise)
+], MlController.prototype, "getClientsWithHealthScore", null);
+__decorate([
+    (0, common_1.Get)('clients/health/summary'),
+    (0, swagger_1.ApiOperation)({ summary: 'Résumé des scores de santé' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Répartition par statut de santé' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], MlController.prototype, "getHealthScoreSummary", null);
 exports.MlController = MlController = __decorate([
     (0, swagger_1.ApiTags)('ml'),
     (0, common_1.Controller)('ml'),

@@ -70,4 +70,14 @@ export declare class MlController {
         affaire: import("../../database/entities").DimAffaire | null;
         features: import("../../database/entities").MlFeaturesAffaire | null;
     }>;
+    getClientsWithHealthScore(pagination: PaginationDto): Promise<{
+        data: any[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }>;
+    getHealthScoreSummary(): Promise<any>;
 }

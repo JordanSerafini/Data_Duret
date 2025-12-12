@@ -24,6 +24,13 @@ export class CommercialController {
     return this.commercialService.getCaEvolution(filter);
   }
 
+  @Get('ca/forecast')
+  @ApiOperation({ summary: 'Prévision CA 3 mois (régression linéaire)' })
+  @ApiResponse({ status: 200, description: 'Prévision avec historique et tendance' })
+  async getCaForecast(@Query() filter: PeriodeFilterDto) {
+    return this.commercialService.getCaForecast(filter);
+  }
+
   @Get('segments')
   @ApiOperation({ summary: 'Liste des segments de CA' })
   @ApiResponse({ status: 200, description: 'Liste des segments' })
