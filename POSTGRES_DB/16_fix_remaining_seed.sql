@@ -93,18 +93,20 @@ WHERE d.type_document IN ('FACTURE', 'FA');
 -- =====================================================
 
 INSERT INTO gold.snapshot_kpi_mensuel
-    (societe_sk, annee, mois, snapshot_date, kpi_data)
+    (snapshot_date, societe_sk, donnees)
 SELECT
-    k.societe_sk,
-    k.annee,
-    k.mois,
     MAKE_DATE(k.annee, k.mois, 1),
+    k.societe_sk,
     jsonb_build_object(
+        'annee', k.annee,
+        'mois', k.mois,
         'ca_mensuel', k.kpi_ca_mensuel,
         'marge_brute', k.kpi_marge_brute,
         'tresorerie', k.kpi_tresorerie_nette,
         'nb_affaires', k.kpi_nb_affaires_en_cours,
-        'dso', k.kpi_dso_jours
+        'dso', k.kpi_dso_jours,
+        'taux_marge', k.kpi_taux_marge,
+        'effectif', k.kpi_effectif_moyen
     )
 FROM gold.kpi_global k;
 
