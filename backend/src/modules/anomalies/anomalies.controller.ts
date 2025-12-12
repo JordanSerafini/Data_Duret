@@ -56,4 +56,27 @@ export class AnomaliesController {
   async getAlertesStock(@Query() filter: PeriodeFilterDto) {
     return this.anomaliesService.getAlertesStock(filter);
   }
+
+  // ==================== PATTERN DETECTION & RISK HEATMAP ====================
+
+  @Get('patterns')
+  @ApiOperation({ summary: 'Détection de patterns d\'anomalies récurrentes' })
+  @ApiResponse({ status: 200, description: 'Patterns identifiés avec corrélations et recommandations' })
+  async getAnomalyPatterns(@Query() filter: PeriodeFilterDto) {
+    return this.anomaliesService.getAnomalyPatterns(filter);
+  }
+
+  @Get('heatmap')
+  @ApiOperation({ summary: 'Heatmap de risque multi-dimensionnelle' })
+  @ApiResponse({ status: 200, description: 'Matrice de risque par catégorie et sévérité' })
+  async getRiskHeatmap(@Query() filter: PeriodeFilterDto) {
+    return this.anomaliesService.getRiskHeatmap(filter);
+  }
+
+  @Get('trends')
+  @ApiOperation({ summary: 'Analyse des tendances d\'anomalies' })
+  @ApiResponse({ status: 200, description: 'Tendances, projections et actions prioritaires' })
+  async getAnomalyTrends(@Query() filter: PeriodeFilterDto) {
+    return this.anomaliesService.getAnomalyTrends(filter);
+  }
 }

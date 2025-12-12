@@ -426,4 +426,465 @@ export class AnomaliesService {
     if (score >= 60) return 'MOYENNE';
     return 'BASSE';
   }
+
+  // ==================== PATTERN DETECTION ====================
+
+  /**
+   * Détection de patterns d'anomalies récurrentes
+   * Identifie les tendances et corrélations entre anomalies
+   */
+  async getAnomalyPatterns(filter: PeriodeFilterDto) {
+    const anomalies = await this.getAllAnomalies(filter);
+
+    // Grouper les anomalies par type
+    const parType: Record<string, Anomalie[]> = {};
+    anomalies.forEach((a) => {
+      if (!parType[a.type]) parType[a.type] = [];
+      parType[a.type].push(a);
+    });
+
+    // Analyser les patterns temporels (si on avait des données historiques)
+    // Pour l'instant, on analyse la distribution actuelle
+
+    // Patterns détectés
+    const patterns: Array<{
+      id: string;
+      type: string;
+      description: string;
+      frequence: number;
+      severite_dominante: Anomalie['severite'];
+      tendance: 'CROISSANTE' | 'STABLE' | 'DECROISSANTE';
+      correlation: string[];
+      recommandation: string;
+    }> = [];
+
+    // Pattern 1: Concentration d'anomalies client
+    const anomaliesClients = anomalies.filter((a) => a.categorie === 'Clients');
+    if (anomaliesClients.length > 3) {
+      const typesClients = [...new Set(anomaliesClients.map((a) => a.type))];
+      const severiteCritique = anomaliesClients.filter((a) => a.severite === 'CRITIQUE').length;
+
+      patterns.push({
+        id: 'PATTERN_CLIENT_MULTI',
+        type: 'CONCENTRATION',
+        description: `${anomaliesClients.length} anomalies clients détectées (${typesClients.length} types différents)`,
+        frequence: anomaliesClients.length,
+        severite_dominante: severiteCritique > anomaliesClients.length / 2 ? 'CRITIQUE' : 'HAUTE',
+        tendance: 'STABLE',
+        correlation: typesClients,
+        recommandation: 'Audit complet du portefeuille clients recommandé',
+      });
+    }
+
+    // Pattern 2: Corrélation impayés/risque crédit
+    const impayes = parType['IMPAYE'] || [];
+    const risqueCredit = parType['RISQUE_CREDIT'] || [];
+    if (impayes.length > 0 && risqueCredit.length > 0) {
+      // Vérifier si les mêmes clients sont concernés
+      const clientsImpayes = new Set(impayes.map((a) => a.entite));
+      const clientsRisque = risqueCredit.filter((a) => clientsImpayes.has(a.entite));
+
+      if (clientsRisque.length > 0) {
+        patterns.push({
+          id: 'PATTERN_IMPAYE_RISQUE',
+          type: 'CORRELATION',
+          description: `${clientsRisque.length} clients cumulent impayés ET risque crédit élevé`,
+          frequence: clientsRisque.length,
+          severite_dominante: 'CRITIQUE',
+          tendance: 'CROISSANTE',
+          correlation: ['IMPAYE', 'RISQUE_CREDIT'],
+          recommandation: 'Action de recouvrement prioritaire et blocage des commandes',
+        });
+      }
+    }
+
+    // Pattern 3: Affaires à problèmes multiples
+    const anomaliesAffaires = anomalies.filter((a) => a.categorie === 'Affaires');
+    const affairesUniques = [...new Set(anomaliesAffaires.map((a) => a.entite))];
+    const affairesMultiProblemes = affairesUniques.filter(
+      (entite) => anomaliesAffaires.filter((a) => a.entite === entite).length > 1
+    );
+
+    if (affairesMultiProblemes.length > 0) {
+      patterns.push({
+        id: 'PATTERN_AFFAIRE_MULTI',
+        type: 'ACCUMULATION',
+        description: `${affairesMultiProblemes.length} affaires cumulent plusieurs problèmes`,
+        frequence: affairesMultiProblemes.length,
+        severite_dominante: 'HAUTE',
+        tendance: 'STABLE',
+        correlation: ['ECART_BUDGET', 'AFFAIRE_RETARD', 'RISQUE_AFFAIRE'],
+        recommandation: 'Revue de projet urgente pour ces affaires',
+      });
+    }
+
+    // Pattern 4: Problèmes RH liés à la sous-occupation
+    const sousOccupation = parType['SOUS_OCCUPATION'] || [];
+    if (sousOccupation.length > 2) {
+      const severites = sousOccupation.map((a) => parseFloat(String(a.valeur)) || 0);
+      const moyenneOccupation = severites.reduce((a, b) => a + b, 0) / severites.length;
+
+      patterns.push({
+        id: 'PATTERN_SOUS_OCCUPATION',
+        type: 'TENDANCE',
+        description: `${sousOccupation.length} salariés sous-occupés (moyenne: ${moyenneOccupation.toFixed(0)}%)`,
+        frequence: sousOccupation.length,
+        severite_dominante: moyenneOccupation < 50 ? 'HAUTE' : 'MOYENNE',
+        tendance: 'STABLE',
+        correlation: ['SOUS_OCCUPATION'],
+        recommandation: 'Optimiser la planification et la répartition des ressources',
+      });
+    }
+
+    // Pattern 5: Alertes stock récurrentes
+    const alertesStock = anomalies.filter((a) => a.categorie === 'Stock');
+    if (alertesStock.length > 5) {
+      const ruptures = alertesStock.filter((a) => a.type === 'RUPTURE_STOCK');
+      const surstocks = alertesStock.filter((a) => a.type === 'SURSTOCK');
+
+      patterns.push({
+        id: 'PATTERN_STOCK',
+        type: 'DESEQUILIBRE',
+        description: `Déséquilibre stock: ${ruptures.length} ruptures, ${surstocks.length} surstocks`,
+        frequence: alertesStock.length,
+        severite_dominante: ruptures.length > surstocks.length ? 'HAUTE' : 'MOYENNE',
+        tendance: 'STABLE',
+        correlation: ['RUPTURE_STOCK', 'SURSTOCK'],
+        recommandation: 'Revoir les paramètres de stock minimum et maximum',
+      });
+    }
+
+    // Pattern 6: Risque churn concentré
+    const churnAlerts = parType['RISQUE_CHURN'] || [];
+    if (churnAlerts.length > 2) {
+      const churnCritique = churnAlerts.filter((a) => a.severite === 'CRITIQUE');
+
+      patterns.push({
+        id: 'PATTERN_CHURN',
+        type: 'RISQUE_PERTE',
+        description: `${churnAlerts.length} clients à risque de départ (${churnCritique.length} critiques)`,
+        frequence: churnAlerts.length,
+        severite_dominante: churnCritique.length > 0 ? 'CRITIQUE' : 'HAUTE',
+        tendance: 'CROISSANTE',
+        correlation: ['RISQUE_CHURN', 'IMPAYE'],
+        recommandation: 'Programme de fidélisation et contact commercial prioritaire',
+      });
+    }
+
+    // Trier par sévérité et fréquence
+    const severiteOrder = { CRITIQUE: 0, HAUTE: 1, MOYENNE: 2, BASSE: 3 };
+    patterns.sort((a, b) => {
+      const severiteDiff = severiteOrder[a.severite_dominante] - severiteOrder[b.severite_dominante];
+      if (severiteDiff !== 0) return severiteDiff;
+      return b.frequence - a.frequence;
+    });
+
+    return {
+      nb_patterns: patterns.length,
+      nb_anomalies_total: anomalies.length,
+      patterns,
+      synthese_types: Object.entries(parType).map(([type, list]) => ({
+        type,
+        count: list.length,
+        severite_max: list.reduce((max, a) => {
+          const order = { CRITIQUE: 0, HAUTE: 1, MOYENNE: 2, BASSE: 3 };
+          return order[a.severite] < order[max] ? a.severite : max;
+        }, 'BASSE' as Anomalie['severite']),
+      })).sort((a, b) => b.count - a.count),
+    };
+  }
+
+  // ==================== RISK HEATMAP ====================
+
+  /**
+   * Génère une heatmap de risque multi-dimensionnelle
+   * Permet de visualiser les zones de risque par catégorie et sévérité
+   */
+  async getRiskHeatmap(filter: PeriodeFilterDto) {
+    const anomalies = await this.getAllAnomalies(filter);
+
+    // Définir les catégories et sous-catégories
+    const categories = ['Affaires', 'Clients', 'Stock', 'RH'];
+    const severites: Anomalie['severite'][] = ['CRITIQUE', 'HAUTE', 'MOYENNE', 'BASSE'];
+
+    // Construire la matrice de heatmap
+    const heatmapData: Array<{
+      categorie: string;
+      severite: Anomalie['severite'];
+      count: number;
+      score_risque: number;
+      types: string[];
+    }> = [];
+
+    categories.forEach((categorie) => {
+      severites.forEach((severite) => {
+        const matching = anomalies.filter(
+          (a) => a.categorie === categorie && a.severite === severite
+        );
+
+        // Score de risque: pondéré par sévérité
+        const poids = { CRITIQUE: 4, HAUTE: 3, MOYENNE: 2, BASSE: 1 };
+        const scoreRisque = matching.length * poids[severite];
+
+        heatmapData.push({
+          categorie,
+          severite,
+          count: matching.length,
+          score_risque: scoreRisque,
+          types: [...new Set(matching.map((a) => a.type))],
+        });
+      });
+    });
+
+    // Score global par catégorie
+    const scoresParCategorie = categories.map((categorie) => {
+      const cellules = heatmapData.filter((h) => h.categorie === categorie);
+      const totalScore = cellules.reduce((sum, c) => sum + c.score_risque, 0);
+      const totalAnomalies = cellules.reduce((sum, c) => sum + c.count, 0);
+
+      // Niveau de risque basé sur le score
+      let niveau: 'CRITIQUE' | 'ELEVE' | 'MODERE' | 'FAIBLE';
+      if (totalScore >= 20) niveau = 'CRITIQUE';
+      else if (totalScore >= 10) niveau = 'ELEVE';
+      else if (totalScore >= 5) niveau = 'MODERE';
+      else niveau = 'FAIBLE';
+
+      return {
+        categorie,
+        score_risque: totalScore,
+        nb_anomalies: totalAnomalies,
+        niveau_risque: niveau,
+        repartition: {
+          critique: cellules.find((c) => c.severite === 'CRITIQUE')?.count || 0,
+          haute: cellules.find((c) => c.severite === 'HAUTE')?.count || 0,
+          moyenne: cellules.find((c) => c.severite === 'MOYENNE')?.count || 0,
+          basse: cellules.find((c) => c.severite === 'BASSE')?.count || 0,
+        },
+      };
+    });
+
+    // Score global de l'entreprise
+    const scoreGlobal = scoresParCategorie.reduce((sum, c) => sum + c.score_risque, 0);
+
+    let niveauGlobal: 'CRITIQUE' | 'ELEVE' | 'MODERE' | 'FAIBLE';
+    if (scoreGlobal >= 50) niveauGlobal = 'CRITIQUE';
+    else if (scoreGlobal >= 30) niveauGlobal = 'ELEVE';
+    else if (scoreGlobal >= 15) niveauGlobal = 'MODERE';
+    else niveauGlobal = 'FAIBLE';
+
+    // Top risques à adresser
+    const topRisques = anomalies
+      .filter((a) => a.severite === 'CRITIQUE' || a.severite === 'HAUTE')
+      .slice(0, 10)
+      .map((a) => ({
+        type: a.type,
+        categorie: a.categorie,
+        severite: a.severite,
+        description: a.description,
+        entite: a.entite,
+      }));
+
+    // Recommandations par catégorie à risque
+    const recommandations: Array<{
+      categorie: string;
+      priorite: 'IMMEDIATE' | 'HAUTE' | 'MOYENNE';
+      action: string;
+    }> = [];
+
+    scoresParCategorie
+      .filter((c) => c.niveau_risque === 'CRITIQUE' || c.niveau_risque === 'ELEVE')
+      .forEach((c) => {
+        switch (c.categorie) {
+          case 'Affaires':
+            recommandations.push({
+              categorie: c.categorie,
+              priorite: c.niveau_risque === 'CRITIQUE' ? 'IMMEDIATE' : 'HAUTE',
+              action: 'Revue des affaires en difficulté avec les chefs de projet',
+            });
+            break;
+          case 'Clients':
+            recommandations.push({
+              categorie: c.categorie,
+              priorite: c.niveau_risque === 'CRITIQUE' ? 'IMMEDIATE' : 'HAUTE',
+              action: 'Campagne de recouvrement et analyse du risque client',
+            });
+            break;
+          case 'Stock':
+            recommandations.push({
+              categorie: c.categorie,
+              priorite: 'HAUTE',
+              action: 'Optimisation des stocks et commandes d\'urgence',
+            });
+            break;
+          case 'RH':
+            recommandations.push({
+              categorie: c.categorie,
+              priorite: 'MOYENNE',
+              action: 'Réorganisation de la planification des ressources',
+            });
+            break;
+        }
+      });
+
+    return {
+      score_global: scoreGlobal,
+      niveau_global: niveauGlobal,
+      nb_anomalies_total: anomalies.length,
+      heatmap: heatmapData,
+      par_categorie: scoresParCategorie.sort((a, b) => b.score_risque - a.score_risque),
+      top_risques: topRisques,
+      recommandations: recommandations.sort((a, b) => {
+        const ordre = { IMMEDIATE: 0, HAUTE: 1, MOYENNE: 2 };
+        return ordre[a.priorite] - ordre[b.priorite];
+      }),
+    };
+  }
+
+  // ==================== TENDANCES ANOMALIES ====================
+
+  /**
+   * Analyse des tendances d'anomalies (évolution dans le temps)
+   * Nécessite des données historiques pour être vraiment pertinent
+   */
+  async getAnomalyTrends(filter: PeriodeFilterDto) {
+    // Pour une analyse de tendance complète, on aurait besoin de données historiques
+    // Ici on simule avec les données actuelles en les projetant
+
+    const anomalies = await this.getAllAnomalies(filter);
+    const synthese = await this.getSynthese(filter);
+
+    // Analyse de la distribution actuelle
+    const distributionActuelle = {
+      par_severite: synthese.par_severite,
+      par_categorie: synthese.par_categorie,
+      par_type: synthese.par_type,
+    };
+
+    // Identifier les zones de vigilance
+    const zonesVigilance: Array<{
+      zone: string;
+      indicateur: string;
+      valeur: number;
+      seuil: number;
+      status: 'ALERTE' | 'ATTENTION' | 'OK';
+    }> = [];
+
+    // Zone 1: Taux d'anomalies critiques
+    const tauxCritique = (synthese.par_severite.critique / Math.max(1, synthese.total)) * 100;
+    zonesVigilance.push({
+      zone: 'Sévérité',
+      indicateur: 'Taux anomalies critiques',
+      valeur: Math.round(tauxCritique * 10) / 10,
+      seuil: 20,
+      status: tauxCritique > 30 ? 'ALERTE' : tauxCritique > 20 ? 'ATTENTION' : 'OK',
+    });
+
+    // Zone 2: Concentration par catégorie
+    const maxCategorie = Math.max(
+      synthese.par_categorie.affaires,
+      synthese.par_categorie.clients,
+      synthese.par_categorie.stock
+    );
+    const tauxConcentration = (maxCategorie / Math.max(1, synthese.total)) * 100;
+    zonesVigilance.push({
+      zone: 'Concentration',
+      indicateur: 'Anomalies dans une catégorie',
+      valeur: Math.round(tauxConcentration * 10) / 10,
+      seuil: 50,
+      status: tauxConcentration > 70 ? 'ALERTE' : tauxConcentration > 50 ? 'ATTENTION' : 'OK',
+    });
+
+    // Zone 3: Diversité des types
+    const nbTypesDistincts = Object.keys(synthese.par_type).length;
+    zonesVigilance.push({
+      zone: 'Diversité',
+      indicateur: 'Types d\'anomalies différents',
+      valeur: nbTypesDistincts,
+      seuil: 5,
+      status: nbTypesDistincts > 7 ? 'ALERTE' : nbTypesDistincts > 5 ? 'ATTENTION' : 'OK',
+    });
+
+    // Projections (basées sur la distribution actuelle)
+    const projections = {
+      scenario_optimiste: {
+        description: 'Réduction de 30% si actions correctives immédiates',
+        nb_anomalies_prevu: Math.round(synthese.total * 0.7),
+        score_risque_prevu: Math.round(
+          (synthese.par_severite.critique * 4 +
+            synthese.par_severite.haute * 3 +
+            synthese.par_severite.moyenne * 2 +
+            synthese.par_severite.basse) * 0.7
+        ),
+      },
+      scenario_stable: {
+        description: 'Maintien du niveau actuel sans intervention',
+        nb_anomalies_prevu: synthese.total,
+        score_risque_prevu:
+          synthese.par_severite.critique * 4 +
+          synthese.par_severite.haute * 3 +
+          synthese.par_severite.moyenne * 2 +
+          synthese.par_severite.basse,
+      },
+      scenario_degradation: {
+        description: 'Augmentation de 20% si aucune action',
+        nb_anomalies_prevu: Math.round(synthese.total * 1.2),
+        score_risque_prevu: Math.round(
+          (synthese.par_severite.critique * 4 +
+            synthese.par_severite.haute * 3 +
+            synthese.par_severite.moyenne * 2 +
+            synthese.par_severite.basse) * 1.2
+        ),
+      },
+    };
+
+    // Actions prioritaires
+    const actionsPrioritaires: Array<{
+      priorite: number;
+      categorie: string;
+      action: string;
+      impact_estime: string;
+    }> = [];
+
+    if (synthese.par_severite.critique > 0) {
+      actionsPrioritaires.push({
+        priorite: 1,
+        categorie: 'Toutes',
+        action: 'Traiter immédiatement les anomalies critiques',
+        impact_estime: `Réduction de ${synthese.par_severite.critique * 4} points de risque`,
+      });
+    }
+
+    if (synthese.par_categorie.clients > synthese.total * 0.3) {
+      actionsPrioritaires.push({
+        priorite: 2,
+        categorie: 'Clients',
+        action: 'Revue du portefeuille clients à risque',
+        impact_estime: 'Réduction du risque d\'impayés et churn',
+      });
+    }
+
+    if (synthese.par_categorie.affaires > synthese.total * 0.3) {
+      actionsPrioritaires.push({
+        priorite: 2,
+        categorie: 'Affaires',
+        action: 'Comité de pilotage affaires en difficulté',
+        impact_estime: 'Réduction des dépassements budget et retards',
+      });
+    }
+
+    return {
+      synthese_actuelle: {
+        total: synthese.total,
+        score_risque:
+          synthese.par_severite.critique * 4 +
+          synthese.par_severite.haute * 3 +
+          synthese.par_severite.moyenne * 2 +
+          synthese.par_severite.basse,
+        distribution: distributionActuelle,
+      },
+      zones_vigilance: zonesVigilance,
+      projections,
+      actions_prioritaires: actionsPrioritaires,
+    };
+  }
 }

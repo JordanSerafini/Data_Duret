@@ -42,6 +42,15 @@ let AnomaliesController = class AnomaliesController {
     async getAlertesStock(filter) {
         return this.anomaliesService.getAlertesStock(filter);
     }
+    async getAnomalyPatterns(filter) {
+        return this.anomaliesService.getAnomalyPatterns(filter);
+    }
+    async getRiskHeatmap(filter) {
+        return this.anomaliesService.getRiskHeatmap(filter);
+    }
+    async getAnomalyTrends(filter) {
+        return this.anomaliesService.getAnomalyTrends(filter);
+    }
 };
 exports.AnomaliesController = AnomaliesController;
 __decorate([
@@ -107,6 +116,33 @@ __decorate([
     __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
     __metadata("design:returntype", Promise)
 ], AnomaliesController.prototype, "getAlertesStock", null);
+__decorate([
+    (0, common_1.Get)('patterns'),
+    (0, swagger_1.ApiOperation)({ summary: 'Détection de patterns d\'anomalies récurrentes' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Patterns identifiés avec corrélations et recommandations' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], AnomaliesController.prototype, "getAnomalyPatterns", null);
+__decorate([
+    (0, common_1.Get)('heatmap'),
+    (0, swagger_1.ApiOperation)({ summary: 'Heatmap de risque multi-dimensionnelle' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Matrice de risque par catégorie et sévérité' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], AnomaliesController.prototype, "getRiskHeatmap", null);
+__decorate([
+    (0, common_1.Get)('trends'),
+    (0, swagger_1.ApiOperation)({ summary: 'Analyse des tendances d\'anomalies' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Tendances, projections et actions prioritaires' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], AnomaliesController.prototype, "getAnomalyTrends", null);
 exports.AnomaliesController = AnomaliesController = __decorate([
     (0, swagger_1.ApiTags)('anomalies'),
     (0, common_1.Controller)('anomalies'),
