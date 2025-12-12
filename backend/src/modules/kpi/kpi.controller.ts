@@ -55,4 +55,27 @@ export class KpiController {
   ) {
     return this.kpiService.getKpisBySociete(id, filter);
   }
+
+  // ==================== NOUVELLES FONCTIONNALITES ====================
+
+  @Get('health-score')
+  @ApiOperation({ summary: 'Score de santé global de l\'entreprise' })
+  @ApiResponse({ status: 200, description: 'Score composite avec détails par dimension' })
+  async getHealthScore(@Query() filter: PeriodeFilterDto) {
+    return this.kpiService.getHealthScore(filter);
+  }
+
+  @Get('dso-dpo')
+  @ApiOperation({ summary: 'Analyse DSO/DPO avec recommandations BFR' })
+  @ApiResponse({ status: 200, description: 'Analyse des délais de paiement et recommandations' })
+  async getDsoDpoAnalysis(@Query() filter: PeriodeFilterDto) {
+    return this.kpiService.getDsoDpoAnalysis(filter);
+  }
+
+  @Get('benchmark')
+  @ApiOperation({ summary: 'Benchmark multi-sociétés' })
+  @ApiResponse({ status: 200, description: 'Comparaison des KPIs entre sociétés du groupe' })
+  async getBenchmarkSocietes(@Query() filter: PeriodeFilterDto) {
+    return this.kpiService.getBenchmarkSocietes(filter);
+  }
 }

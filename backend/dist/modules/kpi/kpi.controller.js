@@ -39,6 +39,15 @@ let KpiController = class KpiController {
     async getKpisBySociete(id, filter) {
         return this.kpiService.getKpisBySociete(id, filter);
     }
+    async getHealthScore(filter) {
+        return this.kpiService.getHealthScore(filter);
+    }
+    async getDsoDpoAnalysis(filter) {
+        return this.kpiService.getDsoDpoAnalysis(filter);
+    }
+    async getBenchmarkSocietes(filter) {
+        return this.kpiService.getBenchmarkSocietes(filter);
+    }
 };
 exports.KpiController = KpiController;
 __decorate([
@@ -96,6 +105,33 @@ __decorate([
     __metadata("design:paramtypes", [Number, dto_1.PeriodeFilterDto]),
     __metadata("design:returntype", Promise)
 ], KpiController.prototype, "getKpisBySociete", null);
+__decorate([
+    (0, common_1.Get)('health-score'),
+    (0, swagger_1.ApiOperation)({ summary: 'Score de santé global de l\'entreprise' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Score composite avec détails par dimension' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], KpiController.prototype, "getHealthScore", null);
+__decorate([
+    (0, common_1.Get)('dso-dpo'),
+    (0, swagger_1.ApiOperation)({ summary: 'Analyse DSO/DPO avec recommandations BFR' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Analyse des délais de paiement et recommandations' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], KpiController.prototype, "getDsoDpoAnalysis", null);
+__decorate([
+    (0, common_1.Get)('benchmark'),
+    (0, swagger_1.ApiOperation)({ summary: 'Benchmark multi-sociétés' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Comparaison des KPIs entre sociétés du groupe' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], KpiController.prototype, "getBenchmarkSocietes", null);
 exports.KpiController = KpiController = __decorate([
     (0, swagger_1.ApiTags)('kpi'),
     (0, common_1.Controller)('kpi'),
