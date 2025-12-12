@@ -29,12 +29,11 @@ WHERE non_echu = 0 AND total_creances > 0;
 INSERT INTO bronze.sage_exercice
     (_source_system, _ingestion_time, _batch_id, _source_id, societe_id, code, libelle, date_debut, date_fin, cloture)
 SELECT
-    'SAGE_COMPTA', NOW(), 1, ROW_NUMBER() OVER (), s.societe_id,
+    'SAGE_COMPTA', NOW(), 1, ROW_NUMBER() OVER (), s.source_id,
     CONCAT('EX', y), CONCAT('Exercice ', y),
     MAKE_DATE(y, 1, 1), MAKE_DATE(y, 12, 31),
     CASE WHEN y < 2025 THEN true ELSE false END
-FROM silver.dim_societe s
-CROSS JOIN generate_series(2020, 2025) y
+FROM silver.dim_societe s, generate_series(2020, 2025) y
 WHERE s.is_current = true;
 
 -- =====================================================
@@ -47,7 +46,7 @@ INSERT INTO bronze.sage_reglement
      numero, date_reglement, tiers_code, tiers_type, montant, mode_reglement, reference_banque, statut)
 SELECT
     'SAGE_COMPTA', NOW(), 1, ROW_NUMBER() OVER (),
-    (SELECT societe_id FROM silver.dim_societe WHERE is_current = true ORDER BY RANDOM() LIMIT 1),
+    c.societe_sk,
     1,
     CASE WHEN RANDOM() < 0.8 THEN 'ENCAISSEMENT' ELSE 'DECAISSEMENT' END,
     CONCAT('REG', LPAD(ROW_NUMBER() OVER ()::text, 6, '0')),
@@ -85,7 +84,7 @@ SELECT
     CASE WHEN RANDOM() < 0.7 THEN 'SOLDE' ELSE 'PARTIEL' END
 FROM silver.fact_document_commercial d
 JOIN silver.dim_client c ON d.client_sk = c.client_sk AND c.is_current = true
-JOIN silver.dim_temps t ON d.date_sk = t.date_sk
+JOIN silver.dim_temps t ON d.date_sk = t.date_key
 WHERE d.type_document IN ('FACTURE', 'FA');
 
 -- =====================================================
