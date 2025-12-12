@@ -867,6 +867,16 @@ BEGIN
 
     GET DIAGNOSTICS v_rows_inserted = ROW_COUNT;
 
+    -- [NEW] Mise a jour des liens parent-enfant (Facture -> Devis)
+    UPDATE silver.fact_document_commercial f
+    SET document_origine_sk = parent.document_sk
+    FROM bronze.mde_document_entete b
+    JOIN silver.fact_document_commercial parent ON parent.source_id = b.document_origine_id AND parent.source_system = 'MDE_ERP'
+    WHERE f.source_id = b._source_id
+    AND f.source_system = 'MDE_ERP'
+    AND f.document_origine_sk IS NULL
+    AND b.document_origine_id IS NOT NULL;
+
     PERFORM etl.end_job(v_job_id, 'SUCCESS', v_rows_inserted, 0);
 
     RAISE NOTICE 'LOAD_FACT_DOCUMENT: % inserts', v_rows_inserted;
