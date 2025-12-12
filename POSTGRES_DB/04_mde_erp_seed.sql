@@ -559,7 +559,7 @@ BEGIN
     SELECT ARRAY_AGG(id) INTO charges FROM tiers.charge_affaire WHERE societe_id = 1;
 
     FOR i IN 1..40 LOOP
-        code_aff := 'AFF2024-' || LPAD((30 + i)::TEXT, 3, '0');
+        code_aff := 'AFF2024-' || LPAD((50 + i)::TEXT, 3, '0');
         client_id := clients[1 + (i % array_length(clients, 1))];
         montant := (50000 + RANDOM() * 500000)::NUMERIC(15,2);
 
@@ -769,3 +769,53 @@ BEGIN
     RAISE NOTICE 'Pointages MO: %', (SELECT COUNT(*) FROM chantier.suivi_mo);
     RAISE NOTICE 'Mouvements stock: %', (SELECT COUNT(*) FROM stock.mouvement);
 END $$;
+
+-- ============================================================================
+-- 15. POST-SEED MIGRATION (Gestion des correctifs Schema 03_b)
+-- ============================================================================
+-- Ce bloc assure que les donnees generees ci-dessus sont conformes au nouveau schema
+-- (Table adresses, Snapshots de prix, etc.)
+
+-- A. Migration des Adresses Clients (Seed -> Table tiers.adresse)
+INSERT INTO tiers.adresse (societe_id, tiers_type, tiers_id, type_adresse, libelle, adresse_ligne1, code_postal, ville, pays_code, telephone, defaut)
+SELECT 
+    societe_id, 
+    'CLIENT', 
+    id, 
+    'SIEGE', 
+    'Siege Social',
+    adresse_ligne1, 
+    code_postal, 
+    ville, 
+    pays_code, 
+    telephone,
+    TRUE
+FROM tiers.client
+WHERE id NOT IN (SELECT tiers_id FROM tiers.adresse WHERE tiers_type = 'CLIENT');
+
+-- B. Migration des Adresses Fournisseurs
+INSERT INTO tiers.adresse (societe_id, tiers_type, tiers_id, type_adresse, libelle, adresse_ligne1, code_postal, ville, pays_code, telephone, defaut)
+SELECT 
+    societe_id, 
+    'FOURNISSEUR', 
+    id, 
+    'SIEGE', 
+    'Siege Social',
+    adresse_ligne1, 
+    code_postal, 
+    ville, 
+    pays_code, 
+    telephone,
+    TRUE
+FROM tiers.fournisseur
+WHERE id NOT IN (SELECT tiers_id FROM tiers.adresse WHERE tiers_type = 'FOURNISSEUR');
+
+-- C. Population des snapshots de prix (Pour analyse de marge)
+-- On met a jour les lignes de documents generees avec le prix d'achat actuel de l'article
+UPDATE document.ligne_document ld
+SET prix_achat_snapshot = COALESCE(e.prix_achat, 0),
+    cout_revient_theorique = COALESCE(e.prix_achat, 0)
+FROM ref.element e
+WHERE ld.element_id = e.id
+AND ld.prix_achat_snapshot = 0;
+
