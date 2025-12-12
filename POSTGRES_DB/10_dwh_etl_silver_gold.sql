@@ -1094,7 +1094,7 @@ BEGIN
         a.departement_chantier,
         agg.heures_budget,
         agg.taux_marge_reel,
-        agg.ecart_heures_pct
+        CASE WHEN agg.heures_budget > 0 THEN (agg.ecart_heures / agg.heures_budget) * 100 ELSE 0 END
     FROM silver.dim_affaire a
     LEFT JOIN gold.agg_ca_affaire agg ON agg.affaire_sk = a.affaire_sk
     WHERE a.is_current = TRUE
