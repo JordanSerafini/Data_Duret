@@ -117,8 +117,8 @@ SELECT
     e.date_sk, s.societe_sk, e.journal_sk, e.compte_sk,
     CONCAT(e.numero_piece, '-', s.code), e.numero_ligne,
     e.libelle, e.reference, e.compte_numero,
-    ROUND(e.montant_debit * (0.5 + RANDOM() * 0.5), 2),
-    ROUND(e.montant_credit * (0.5 + RANDOM() * 0.5), 2),
+    ROUND((e.montant_debit * (0.5 + RANDOM() * 0.5))::numeric, 2),
+    ROUND((e.montant_credit * (0.5 + RANDOM() * 0.5))::numeric, 2),
     e.etat_piece, e.origine
 FROM silver.fact_ecriture_compta e
 CROSS JOIN silver.dim_societe s
@@ -138,8 +138,8 @@ INSERT INTO gold.kpi_global (
     societe_sk, annee, mois,
     kpi_ca_mensuel, kpi_marge_brute, kpi_taux_marge,
     kpi_tresorerie_nette, kpi_nb_affaires_en_cours, kpi_dso_jours,
-    kpi_effectif_moyen, kpi_productivite_mo, kpi_heures_facturables,
-    variation_ca_n1, variation_marge_n1, last_calculated
+    kpi_effectif_moyen, kpi_heures_productives, kpi_taux_occupation,
+    kpi_ca_variation_n1_pct, calcul_date
 )
 SELECT
     s.societe_sk,
@@ -160,14 +160,13 @@ SELECT
     30 + (RANDOM() * 30)::int AS kpi_dso_jours,
     -- Effectif
     20 + (RANDOM() * 30)::int AS kpi_effectif_moyen,
-    -- Productivite 70-95%
-    70 + (RANDOM() * 25) AS kpi_productivite_mo,
-    -- Heures facturables
-    1000 + (RANDOM() * 3000) AS kpi_heures_facturables,
-    -- Variations N-1
-    -15 + (RANDOM() * 30) AS variation_ca_n1,
-    -10 + (RANDOM() * 20) AS variation_marge_n1,
-    NOW() AS last_calculated
+    -- Heures productives
+    1000 + (RANDOM() * 3000) AS kpi_heures_productives,
+    -- Taux occupation 70-95%
+    70 + (RANDOM() * 25) AS kpi_taux_occupation,
+    -- Variation N-1
+    -15 + (RANDOM() * 30) AS kpi_ca_variation_n1_pct,
+    NOW() AS calcul_date
 FROM silver.dim_societe s,
      generate_series(2024, 2025) y,
      generate_series(1, 12) m
