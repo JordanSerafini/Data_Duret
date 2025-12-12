@@ -42,6 +42,12 @@ let RhController = class RhController {
     async getHeuresParSalarie(id, filter) {
         return this.rhService.getHeuresParSalarie(id, filter);
     }
+    async getWorkforceEfficiencyScore(filter) {
+        return this.rhService.getWorkforceEfficiencyScore(filter);
+    }
+    async getCostAnalysis(filter) {
+        return this.rhService.getCostAnalysis(filter);
+    }
 };
 exports.RhController = RhController;
 __decorate([
@@ -105,7 +111,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], RhController.prototype, "getQualifications", null);
 __decorate([
-    (0, common_1.Get)('synthese-mensuelle'),
+    (0, common_1.Get)('salaries/:id/heures'),
     (0, swagger_1.ApiOperation)({ summary: 'Détail heures d\'un salarié' }),
     (0, swagger_1.ApiParam)({ name: 'id', type: Number }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Historique heures du salarié' }),
@@ -115,6 +121,24 @@ __decorate([
     __metadata("design:paramtypes", [Number, dto_1.PeriodeFilterDto]),
     __metadata("design:returntype", Promise)
 ], RhController.prototype, "getHeuresParSalarie", null);
+__decorate([
+    (0, common_1.Get)('workforce-efficiency'),
+    (0, swagger_1.ApiOperation)({ summary: 'Score d\'efficacité global de la main d\'oeuvre' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Score composite avec distribution et recommandations' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], RhController.prototype, "getWorkforceEfficiencyScore", null);
+__decorate([
+    (0, common_1.Get)('cost-analysis'),
+    (0, swagger_1.ApiOperation)({ summary: 'Analyse des coûts de main d\'oeuvre' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Coûts par poste, qualification et évolution' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [dto_1.PeriodeFilterDto]),
+    __metadata("design:returntype", Promise)
+], RhController.prototype, "getCostAnalysis", null);
 exports.RhController = RhController = __decorate([
     (0, swagger_1.ApiTags)('rh'),
     (0, common_1.Controller)('rh'),

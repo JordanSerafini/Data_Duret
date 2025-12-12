@@ -65,7 +65,7 @@ export class RhController {
     return this.rhService.getQualifications();
   }
 
-  @Get('synthese-mensuelle')
+  @Get('salaries/:id/heures')
   @ApiOperation({ summary: 'Détail heures d\'un salarié' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Historique heures du salarié' })
@@ -74,5 +74,21 @@ export class RhController {
     @Query() filter: PeriodeFilterDto,
   ) {
     return this.rhService.getHeuresParSalarie(id, filter);
+  }
+
+  // ==================== SCORE EFFICACITÉ WORKFORCE ====================
+
+  @Get('workforce-efficiency')
+  @ApiOperation({ summary: 'Score d\'efficacité global de la main d\'oeuvre' })
+  @ApiResponse({ status: 200, description: 'Score composite avec distribution et recommandations' })
+  async getWorkforceEfficiencyScore(@Query() filter: PeriodeFilterDto) {
+    return this.rhService.getWorkforceEfficiencyScore(filter);
+  }
+
+  @Get('cost-analysis')
+  @ApiOperation({ summary: 'Analyse des coûts de main d\'oeuvre' })
+  @ApiResponse({ status: 200, description: 'Coûts par poste, qualification et évolution' })
+  async getCostAnalysis(@Query() filter: PeriodeFilterDto) {
+    return this.rhService.getCostAnalysis(filter);
   }
 }
