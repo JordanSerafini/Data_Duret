@@ -197,10 +197,10 @@ export class TresorerieService {
       .leftJoin(DimClient, 'c', 'ba.client_sk = c.client_sk AND c.is_current = true')
       .select([
         'c.raison_sociale AS client',
-        'c.ville',
-        'ba.total_echu',
-        'ba.score_risque_credit',
-        'ba.dso_jours',
+        'c.ville AS ville',
+        'ba.total_echu AS total_echu',
+        'ba.score_risque_credit AS score_risque_credit',
+        'ba.dso_jours AS dso_jours',
       ])
       .where('ba.score_risque_credit >= :seuil', { seuil: seuilRisque })
       .andWhere(
