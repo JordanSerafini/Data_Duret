@@ -74,4 +74,14 @@ export declare class MlService {
         clients: any;
         affaires: any;
     }>;
+    getClientsWithHealthScore(pagination: PaginationDto): Promise<{
+        data: any[];
+        meta: {
+            total: number;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }>;
+    getHealthScoreSummary(): Promise<any>;
 }
