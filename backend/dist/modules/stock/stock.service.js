@@ -27,17 +27,18 @@ let StockService = class StockService {
             .createQueryBuilder('s')
             .leftJoin(entities_1.DimElement, 'e', 's.element_sk = e.element_sk AND e.is_current = true')
             .select([
-            'e.code',
-            'e.designation',
-            'e.famille',
-            's.depot_code',
-            's.stock_final',
-            's.stock_minimum',
-            's.valeur_stock',
-            's.rotation_stock',
-            's.couverture_jours',
+            'e.code AS code',
+            'e.designation AS designation',
+            'e.famille AS famille',
+            's.depot_code AS depot_code',
+            's.stock_final AS stock_final',
+            's.stock_minimum AS stock_minimum',
+            's.valeur_stock AS valeur_stock',
+            's.rotation_stock AS rotation_stock',
+            's.couverture_jours AS couverture_jours',
             's.est_sous_stock_mini AS rupture',
             's.est_surstock AS surstock',
+            "CASE WHEN s.est_sous_stock_mini THEN 'RUPTURE IMMINENTE' WHEN s.est_surstock THEN 'SURSTOCK' ELSE 'OK' END AS alerte",
         ])
             .where('(s.est_sous_stock_mini = true OR s.est_surstock = true)')
             .andWhere('s.date_calcul = (SELECT MAX(date_calcul) FROM gold.agg_stock_element)');
@@ -152,9 +153,9 @@ let StockService = class StockService {
             .createQueryBuilder('s')
             .leftJoin(entities_1.DimElement, 'e', 's.element_sk = e.element_sk AND e.is_current = true')
             .select([
-            'e.famille',
+            'e.famille AS famille',
             'COUNT(*) AS nb_articles',
-            'SUM(s.valeur_stock) AS valeur_totale',
+            'SUM(s.valeur_stock) AS valeur',
             'AVG(s.rotation_stock) AS rotation_moyenne',
         ])
             .where('s.date_calcul = (SELECT MAX(date_calcul) FROM gold.agg_stock_element)')
