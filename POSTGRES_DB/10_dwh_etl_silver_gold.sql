@@ -1077,29 +1077,24 @@ BEGIN
     -- Calcul des features affaires
     INSERT INTO gold.ml_features_affaire (
         affaire_sk, date_extraction,
-        duree_commerciale_jours,
-        ecart_budget_heures_pct,
-        taux_marge_prevu,
-        taux_marge_reel,
-        est_en_retard,
-        departement -- [INTEGRITY FK]
+        type_affaire,
+        montant_commande,
+        duree_prevue_jours,
+        departement, -- [INTEGRITY FK]
+        heures_budget,
+        marge_reelle_pct,
+        ecart_budget_heures_pct
     )
     SELECT
         a.affaire_sk,
         v_date_extraction,
-        -- Duree commerciale (creation -> commande)
-        CASE WHEN a.date_creation IS NOT NULL AND a.montant_commande > 0 THEN -- Approximation simple
-            30 -- Valeur par defaut pour l'exemple
-        ELSE NULL END,
-        -- Ecart Budget
-        agg.ecart_heures_pct,
-        -- Marge
-        a.marge_prevue_pct,
+        a.type_affaire,
+        a.montant_commande,
+        a.duree_prevue_jours,
+        a.departement_chantier,
+        agg.heures_budget,
         agg.taux_marge_reel,
-        -- Retard
-        agg.est_en_retard,
-        -- Departement (pour FK)
-        a.departement_chantier
+        agg.ecart_heures_pct
     FROM silver.dim_affaire a
     LEFT JOIN gold.agg_ca_affaire agg ON agg.affaire_sk = a.affaire_sk
     WHERE a.is_current = TRUE
