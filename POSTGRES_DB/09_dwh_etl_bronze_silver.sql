@@ -451,6 +451,7 @@ BEGIN
         element_nk, source_system, source_id, societe_sk, code, designation,
         type_element, famille, sous_famille, unite, prix_achat_standard,
         prix_vente_standard, marge_standard_pct, temps_unitaire_heures,
+        fournisseur_principal_sk, -- [NEW]
         compte_achat, compte_vente, est_actif, is_current, valid_from, row_hash
     )
     SELECT
@@ -468,6 +469,7 @@ BEGIN
         b.prix_vente,
         CASE WHEN b.prix_achat > 0 THEN ((b.prix_vente - b.prix_achat) / b.prix_achat * 100) ELSE NULL END,
         b.temps_unitaire,
+        f.fournisseur_sk, -- [NEW]
         b.compte_achat,
         b.compte_vente,
         b.actif,
@@ -476,6 +478,7 @@ BEGIN
         silver.compute_row_hash(ARRAY[b.code, b.designation, b.type_element, b.prix_achat::TEXT, b.prix_vente::TEXT])
     FROM bronze.mde_element b
     LEFT JOIN silver.dim_societe s ON s.source_id = b.societe_id AND s.source_system = 'SAGE_COMPTA' AND s.is_current = TRUE
+    LEFT JOIN silver.dim_fournisseur f ON f.source_id = b.fournisseur_principal_id AND f.is_current = TRUE -- [NEW]
     WHERE NOT EXISTS (
         SELECT 1 FROM silver.dim_element e
         WHERE e.element_nk = b.societe_id || ':' || b.code
@@ -830,7 +833,7 @@ BEGIN
         source_system, source_id, date_sk, societe_sk, client_sk,
         affaire_sk, chantier_sk, type_document, numero, objet, statut,
         montant_ht, montant_tva, montant_ttc, taux_tva_moyen, nb_lignes,
-        date_validation
+        date_validation, document_origine_sk -- [NEW]
     )
     SELECT
         'MDE_ERP',
@@ -849,12 +852,14 @@ BEGIN
         d.montant_ttc,
         d.taux_tva,
         (SELECT COUNT(*) FROM bronze.mde_document_ligne l WHERE l.entete_id = d._source_id),
-        d.date_validation
+        d.date_validation,
+        doc_orig.document_sk -- [NEW]
     FROM bronze.mde_document_entete d
     LEFT JOIN silver.dim_societe s ON s.source_id = d.societe_id AND s.source_system = 'SAGE_COMPTA' AND s.is_current = TRUE
     LEFT JOIN silver.dim_client c ON c.mde_code = d.tiers_code AND c.is_current = TRUE AND d.tiers_type = 'CLIENT'
     LEFT JOIN silver.dim_affaire a ON a.source_id = d.affaire_id AND a.is_current = TRUE
     LEFT JOIN silver.dim_chantier ch ON ch.source_id = d.chantier_id AND ch.is_current = TRUE
+    LEFT JOIN silver.fact_document_commercial doc_orig ON doc_orig.source_id = d.document_origine_id -- [NEW]
     WHERE NOT EXISTS (
         SELECT 1 FROM silver.fact_document_commercial f
         WHERE f.source_id = d._source_id

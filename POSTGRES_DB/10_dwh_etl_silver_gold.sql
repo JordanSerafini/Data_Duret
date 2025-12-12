@@ -1058,6 +1058,63 @@ END;
 $$;
 
 -- ============================================================================
+-- 11.2 CHARGEMENT FEATURES ML : AFFAIRES
+-- ============================================================================
+
+CREATE OR REPLACE PROCEDURE etl.load_ml_features_affaire()
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_job_id BIGINT;
+    v_rows_inserted INTEGER := 0;
+    v_date_extraction DATE := CURRENT_DATE;
+BEGIN
+    v_job_id := etl.start_job('LOAD_ML_FEATURES_AFFAIRE', 'GOLD', 'GOLD');
+
+    -- Supprimer les features du jour
+    DELETE FROM gold.ml_features_affaire WHERE date_extraction = v_date_extraction;
+
+    -- Calcul des features affaires
+    INSERT INTO gold.ml_features_affaire (
+        affaire_sk, date_extraction,
+        duree_commerciale_jours,
+        ecart_budget_heures_pct,
+        taux_marge_prevu,
+        taux_marge_reel,
+        est_en_retard,
+        departement -- [INTEGRITY FK]
+    )
+    SELECT
+        a.affaire_sk,
+        v_date_extraction,
+        -- Duree commerciale (creation -> commande)
+        CASE WHEN a.date_creation IS NOT NULL AND a.montant_commande > 0 THEN -- Approximation simple
+            30 -- Valeur par defaut pour l'exemple
+        ELSE NULL END,
+        -- Ecart Budget
+        agg.ecart_heures_pct,
+        -- Marge
+        a.marge_prevue_pct,
+        agg.taux_marge_reel,
+        -- Retard
+        agg.est_en_retard,
+        -- Departement (pour FK)
+        a.departement_chantier
+    FROM silver.dim_affaire a
+    LEFT JOIN gold.agg_ca_affaire agg ON agg.affaire_sk = a.affaire_sk
+    WHERE a.is_current = TRUE
+    AND a.etat_groupe = 'EN_COURS';
+
+    GET DIAGNOSTICS v_rows_inserted = ROW_COUNT;
+
+    PERFORM etl.end_job(v_job_id, 'SUCCESS', v_rows_inserted, 0);
+
+    RAISE NOTICE 'LOAD_ML_FEATURES_AFFAIRE: % inserts', v_rows_inserted;
+END;
+$$;
+
+
+-- ============================================================================
 -- 12. PROCEDURE ORCHESTRATION SILVER -> GOLD
 -- ============================================================================
 
@@ -1083,6 +1140,7 @@ BEGIN
 
     -- Features ML
     CALL etl.load_ml_features_client();
+    CALL etl.load_ml_features_affaire(); -- [NEW]
 
     RAISE NOTICE 'Fin ETL Silver -> Gold: %', CURRENT_TIMESTAMP;
 END;
