@@ -67,4 +67,22 @@ __decorate([
     (0, class_validator_1.IsEnum)(NiveauAgregation),
     __metadata("design:type", String)
 ], PeriodeFilterDto.prototype, "niveau", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Seuil de risque (défaut: 60)', example: 60 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => parseInt(value)),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(100),
+    __metadata("design:type", Number)
+], PeriodeFilterDto.prototype, "seuil", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Limite de résultats', example: 10 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => parseInt(value)),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(100),
+    __metadata("design:type", Number)
+], PeriodeFilterDto.prototype, "limit", void 0);
 //# sourceMappingURL=periode-filter.dto.js.map

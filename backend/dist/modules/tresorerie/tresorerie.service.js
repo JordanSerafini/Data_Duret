@@ -62,8 +62,8 @@ let TresorerieService = class TresorerieService {
         const queryBuilder = this.tresorerieRepository
             .createQueryBuilder('t')
             .select([
-            't.annee',
-            't.mois',
+            't.annee AS annee',
+            't.mois AS mois',
             'SUM(t.solde_total) AS solde_total',
             'SUM(t.flux_net) AS flux_net',
             'SUM(t.creances_echues) AS creances_echues',

@@ -11,4 +11,6 @@ export declare class PeriodeFilterDto {
     trimestre?: number;
     societeId?: number;
     niveau?: NiveauAgregation;
+    seuil?: number;
+    limit?: number;
 }

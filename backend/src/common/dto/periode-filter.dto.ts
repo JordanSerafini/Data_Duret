@@ -48,4 +48,20 @@ export class PeriodeFilterDto {
   @IsOptional()
   @IsEnum(NiveauAgregation)
   niveau?: NiveauAgregation;
+
+  @ApiPropertyOptional({ description: 'Seuil de risque (défaut: 60)', example: 60 })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  seuil?: number;
+
+  @ApiPropertyOptional({ description: 'Limite de résultats', example: 10 })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }
